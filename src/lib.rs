@@ -1,3 +1,6 @@
+pub mod pddl_parser;
+
+
 #[cfg(test)]
 mod tests {
     #[test]
