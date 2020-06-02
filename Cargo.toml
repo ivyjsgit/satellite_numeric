@@ -7,3 +7,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhop = {git = "https://github.com/gjf2a/anyhop"}
+sexpy = "0.5.6"
+io-error = "0.1.1"
