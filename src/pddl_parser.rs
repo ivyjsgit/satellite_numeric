@@ -1,9 +1,17 @@
 use sexpy::*;
-use crate::operators::{BlockState, BlockGoals};
+use crate::operators::{BlockState, BlockGoals, SatelliteState};
 use std::{io,fs};
 use std::collections::HashMap;
 
 pub fn make_block_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
+    let contents = fs::read_to_string(pddl_file)?.to_lowercase();
+    match Define::parse(contents.as_str()) {
+        Ok(parsed) => Ok(parsed.init_and_goal()),
+        Err(e) => {println!("{}", e); Err(err!(Other, "oops"))}
+    }
+}
+
+pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
     match Define::parse(contents.as_str()) {
         Ok(parsed) => Ok(parsed.init_and_goal()),
@@ -44,6 +52,47 @@ impl Define {
         (BlockState::from(table, stacks), BlockGoals::new(goals))
     }
 }
+
+/*
+
+impl Define {
+    pub fn init_and_goal(&self) -> SatelliteState {
+        let mut objects = HashMap::new();
+        for object in self.objects.objs.iter() {
+            objects.insert(String::from(object), objects.len());
+        }
+        let mut onboard = Vec::new();
+        let mut supports = Vec::new();
+        let mut pointing =  Vec::new();
+        let mut power_avail = Vec::new();
+        let mut power_on =  Vec::new();
+        let mut calibrated =  Vec::new();
+        let mut have_image = Vec::new();
+        let mut calibration_target =  Vec::new();
+
+        for pred in self.init.predicates.iter() {
+            if pred.predicate_type == "supports" {
+                supports.push(decode_on(&pred, &objects));
+                // table.push(*objects.get(pred.predicate_args[0].as_str()).unwrap());
+            } else if pred.predicate_type == "on" {
+                // stacks.push(decode_on(&pred, &objects));
+            }
+        }
+
+
+        // let mut goals = Vec::new();
+        // for goal in self.goal.and.goals.iter() {
+        //     goals.push(decode_on(&goal, &objects));
+        // }
+
+        SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target)
+
+        // (BlockState::from(table, stacks), BlockGoals::new(goals))
+    }
+}
+
+
+*/
 
 fn decode_on(p: &Predicate, objects: &HashMap<String,usize>) -> (usize, usize) {
     let top = obj_get(p, objects, 0);
