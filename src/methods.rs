@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 //Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
 
-=======
->>>>>>> master
 use super::operators::*;
 use anyhop::{Atom, Method, MethodTag, Task, MethodResult, Goal};
 
