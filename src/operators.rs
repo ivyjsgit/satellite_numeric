@@ -177,14 +177,38 @@ pub struct SatelliteState {
     power_on: Vec<SatelliteEnum>,
     calibrated: Vec<SatelliteEnum>,
     have_image: Vec<SatelliteEnum>,
-    calibration_target: Vec<SatelliteEnum>
+    calibration_target: Vec<SatelliteEnum>,
+    data_capacity: BTreeMap<SatelliteEnum, u32>,
+    data_stored:  BTreeMap<SatelliteEnum, u32>,
+    satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>,
+    fuel_used: u32
 }
 
 impl SatelliteState {
-    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: Vec<SatelliteEnum>, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>) -> Self {
-        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target }
+    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: Vec<SatelliteEnum>, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, data_stored: BTreeMap<SatelliteEnum, u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, fuel_used: u32) -> Self {
+        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, fuel_used }
     }
 }
+
+impl SatelliteState {
+
+    pub fn set_data_capacity(&mut self, satellite: SatelliteEnum, capacity: u32){
+        self.data_capacity.insert(satellite, capacity);
+    }
+    pub fn set_data_stored(&mut self, satellite: SatelliteEnum, capacity: u32){
+        self.data_capacity.insert(satellite, capacity);
+    }
+    pub fn set_satellite_fuel(&mut self, satellite: SatelliteEnum, capacity: u32){
+        self.satellite_fuel_capacity.insert(satellite, capacity);
+    }
+    //This is incorrect
+    pub fn get_fuel_used(self)->u32 {
+        return self.fuel_used;
+    }
+
+}
+
+
 
 
 
