@@ -164,22 +164,27 @@ impl <B:Atom> Operator for BlockOperator<B> {
 type Direction = String;
 
 #[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
-pub struct SatelliteState {
-    onboard: Vec<SatelliteEnum>,
-    supports: Vec<SatelliteEnum>,
-    pointing: SatelliteEnum
-}
-
-#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub enum SatelliteEnum{
     Instrument(String), Satellite(String), Mode(String), Direction(String)
 }
 
+#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
+pub struct SatelliteState {
+    onboard: Vec<SatelliteEnum>,
+    supports: Vec<SatelliteEnum>,
+    pointing: Vec<SatelliteEnum>,
+    power_avail: Vec<SatelliteEnum>,
+    power_on: Vec<SatelliteEnum>,
+    calibrated: Vec<SatelliteEnum>,
+    have_image: Vec<SatelliteEnum>,
+    calibration_target: Vec<SatelliteEnum>
+}
+
+impl SatelliteState {
+    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: Vec<SatelliteEnum>, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>) -> Self {
+        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target }
+    }
+}
 
 
 
-// impl SatelliteState {
-//     pub fn new(fuel:u32, research:u32) -> Self{
-//         // SatelliteState{fuel_remaining: fuel, research_space_remaining: research}
-//     }
-// }
