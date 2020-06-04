@@ -1,5 +1,10 @@
 #[macro_use]
 extern crate io_error;
+extern crate strum;
+extern crate strum_macros;
+
+
+
 pub mod methods;
 pub mod operators;
 pub mod pddl_parser;

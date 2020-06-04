@@ -10,3 +10,5 @@ edition = "2018"
 anyhop = {git = "https://github.com/gjf2a/anyhop"}
 sexpy = "0.5.6"
 io-error = "0.1.1"
+strum = "0.13.0"
+strum_macros = "0.13.0"

@@ -1,4 +1,5 @@
 //Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
+use strum_macros::*;
 
 use std::collections::{BTreeSet, BTreeMap};
 use anyhop::{Atom, Operator};
@@ -169,9 +170,8 @@ impl<B: Atom> Operator for BlockOperator<B> {
 
 //These come from the predicates
 
-type Direction = String;
 
-#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
+#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug, Display)]
 pub enum SatelliteEnum {
     Instrument(String),
     Satellite(String),
@@ -238,7 +238,7 @@ impl SatelliteState {
             let key = (new_direction.clone(), previous_direction.clone());
             match self.slew_time.get(&key) {
                 Some(x) => self.turn_to_helper(*x, new_direction, previous_direction), //We have to use a helper here because matches are 1 liners.
-                None => println!("Something bad happened!"),
+                None => eprintln!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1),
             }
         }
     }
@@ -246,8 +246,8 @@ impl SatelliteState {
     fn turn_to_helper(&mut self, x: u32, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
         if self.fuel >= x {
             if self.pointing == *new_direction && self.pointing != *previous_direction {
-                self.set_slew_time(new_direction, previous_direction, (self.fuel - 1));
-                self.set_slew_time(new_direction, previous_direction, (self.fuel_used + 1));
+                self.set_slew_time(new_direction, previous_direction, self.fuel - 1);
+                self.set_slew_time(new_direction, previous_direction, self.fuel_used + 1);
             }
         }
     }
