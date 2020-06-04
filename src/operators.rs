@@ -207,38 +207,45 @@ impl SatelliteState {
 
 impl SatelliteState {
     //data_capacity
-    pub fn set_data_capacity(&mut self, satellite: SatelliteEnum, capacity: u32) {
-        self.data_capacity.insert(satellite, capacity);
+    pub fn set_data_capacity(&mut self, satellite: &SatelliteEnum, capacity: u32) {
+        self.data_capacity.insert(satellite.clone(), capacity);
     }
     //data_stored
-    pub fn set_data_stored(&mut self, direction: SatelliteEnum, mode: SatelliteEnum, size: u32) {
-        self.data_stored.insert((direction, mode), size);
+    pub fn set_data_stored(&mut self, direction: &SatelliteEnum, mode: &SatelliteEnum, size: u32) {
+        self.data_stored.insert((direction.clone(), mode.clone()), size);
     }
     //slew_time
-    pub fn set_slew_time(&mut self, a: SatelliteEnum, b: SatelliteEnum, time: u32) {
-        self.slew_time.insert((a, b), time);
+    pub fn set_slew_time(&mut self, a: &SatelliteEnum, b: &SatelliteEnum, time: u32) {
+        // GJF: *** The ownership issues are resolved by cloning a and b at this stage.
+        self.slew_time.insert((a.clone(), b.clone()), time);
     }
     //fuel
-    pub fn set_satellite_fuel(&mut self, satellite: SatelliteEnum, capacity: u32) {
-        self.satellite_fuel_capacity.insert(satellite, capacity);
+    pub fn set_satellite_fuel(&mut self, satellite: &SatelliteEnum, capacity: u32) {
+        // GJF: *** Same idea here.
+        self.satellite_fuel_capacity.insert(satellite.clone(), capacity);
     }
     //fuel-used
     pub fn set_fuel_used(&mut self, fuel: u32) {
         self.fuel_used = fuel;
     }
     //action turn_to
-    pub fn turn_to(&mut self, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) {
-        if (self.pointing == previous_direction) && (new_direction != previous_direction) {
-            match self.slew_time.get(&(new_direction, previous_direction)) {
+    // GJF: *** Because SatelliteEnum is not a Copy type, we need to either lend it to
+    //  turn_to_helper() or clone it when passing it to turn_to_helper(). I have reworked
+    //  things so that we are lending it.
+    pub fn turn_to(&mut self, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
+        if (self.pointing == *previous_direction) && (new_direction != previous_direction) {
+            // GJF: *** I had to clone them here to create the key for the lookup.
+            let key = (new_direction.clone(), previous_direction.clone());
+            match self.slew_time.get(&key) {
                 Some(x) => self.turn_to_helper(*x, new_direction, previous_direction), //We have to use a helper here because matches are 1 liners.
                 None => println!("Something bad happened!"),
             }
         }
     }
 
-    fn turn_to_helper(&mut self, x: u32, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) {
+    fn turn_to_helper(&mut self, x: u32, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
         if self.fuel >= x {
-            if self.pointing == new_direction && self.pointing != previous_direction {
+            if self.pointing == *new_direction && self.pointing != *previous_direction {
                 self.set_slew_time(new_direction, previous_direction, (self.fuel - 1));
                 self.set_slew_time(new_direction, previous_direction, (self.fuel_used + 1));
             }
