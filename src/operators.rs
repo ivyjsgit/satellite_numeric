@@ -183,7 +183,7 @@ pub enum SatelliteEnum{
 pub struct SatelliteState {
     onboard: Vec<SatelliteEnum>,
     supports: Vec<SatelliteEnum>,
-    pointing: Vec<SatelliteEnum>,
+    pointing: SatelliteEnum,
     power_avail: Vec<SatelliteEnum>,
     power_on: Vec<SatelliteEnum>,
     calibrated: Vec<SatelliteEnum>,
@@ -194,12 +194,18 @@ pub struct SatelliteState {
     satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>,
     slew_time: BTreeMap<(SatelliteEnum,SatelliteEnum), u32>,
     fuel_used: u32,
+    fuel:u32
 }
 
 impl SatelliteState {
-    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: Vec<SatelliteEnum>, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32) -> Self {
-        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, slew_time, fuel_used }
+    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: SatelliteEnum, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32, fuel: u32) -> Self {
+        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel }
     }
+}
+
+
+impl SatelliteState {
+
 
     //data_capacity
     pub fn set_data_capacity(&mut self, satellite: SatelliteEnum, capacity: u32){
@@ -220,6 +226,24 @@ impl SatelliteState {
     //fuel-used
     pub fn set_fuel_used(&mut self, fuel:u32){
         self.fuel_used = fuel;
+    }
+    //action turn_to
+    pub fn turn_to(&mut self, new_direction: SatelliteEnum, previous_direction: SatelliteEnum){
+        if (self.pointing == previous_direction) && (new_direction != previous_direction) {
+             match self.slew_time.get(&(new_direction, previous_direction)){
+                Some(x)=>   self.turn_to_helper(&x, &new_direction, &previous_direction), //We have to use a helper here because matches are 1 liners.
+                None => println!("Something bad happened!"),
+            }
+        }
+    }
+
+    fn turn_to_helper(&mut self, x:u32, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
+        if self.fuel>=x{
+            if self.pointing == new_direction && self.pointing != previous_direction {
+                self.slew_time((&new_direction, &previous_direction), self.fuel - 1);
+                self.slew_time((&new_direction, &previous_direction), self.fuel_used + 1);
+            }
+        }
     }
 }
 
