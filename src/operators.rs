@@ -179,31 +179,45 @@ pub struct SatelliteState {
     have_image: Vec<SatelliteEnum>,
     calibration_target: Vec<SatelliteEnum>,
     data_capacity: BTreeMap<SatelliteEnum, u32>,
-    data_stored:  BTreeMap<SatelliteEnum, u32>,
+    data_stored:  BTreeMap<SatelliteEnum, u32>, //This is incorrect
     satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>,
-    fuel_used: u32
+    slew_time: BTreeMap<(SatelliteEnum,SatelliteEnum), u32>,
+    fuel_used: u32,
 }
 
 impl SatelliteState {
-    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: Vec<SatelliteEnum>, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, data_stored: BTreeMap<SatelliteEnum, u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, fuel_used: u32) -> Self {
-        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, fuel_used }
+    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: Vec<SatelliteEnum>, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, data_stored: BTreeMap<SatelliteEnum, u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32) -> Self {
+        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, slew_time, fuel_used }
     }
 }
 
 impl SatelliteState {
 
+}
+
+impl SatelliteState {
+
+    //data_capacity
     pub fn set_data_capacity(&mut self, satellite: SatelliteEnum, capacity: u32){
         self.data_capacity.insert(satellite, capacity);
     }
+    //This is incorrect
+    //data_stored
     pub fn set_data_stored(&mut self, satellite: SatelliteEnum, capacity: u32){
         self.data_capacity.insert(satellite, capacity);
     }
+    //fuel
     pub fn set_satellite_fuel(&mut self, satellite: SatelliteEnum, capacity: u32){
         self.satellite_fuel_capacity.insert(satellite, capacity);
     }
-    //This is incorrect
-    pub fn get_fuel_used(self)->u32 {
-        return self.fuel_used;
+    // //This is incorrect
+    // pub fn get_fuel_used(self)->u32 {
+    //     return self.fuel_used;
+    // }
+
+    //slew_time
+    pub fn set_slew_time(&mut self, a: SatelliteEnum, b: SatelliteEnum, time: u32){
+        self.slew_time.insert((a,b),time);
     }
 
 }
