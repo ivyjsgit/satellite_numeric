@@ -187,7 +187,7 @@ pub struct SatelliteState {
     power_avail: bool,
     power_on: Vec<SatelliteEnum>,
     calibrated: Vec<SatelliteEnum>,
-    have_image: Vec<SatelliteEnum>,
+    have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
     calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>,
     data_capacity: u32,
     data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
@@ -290,7 +290,17 @@ impl SatelliteState {
     }
     pub fn take_image(&mut self, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum){
         if self.calibrated.contains(instrument) && self.onboard.contains(instrument) && self.supports_helper(instrument, mode) && self.power_on.contains(instrument) && (self.pointing == direction) && (self.power_on.contains(instrument)) && (self.data_capacity >= self.data_used_helper(&direction, &mode)){
-         //I'm not sure what to do for the effect here.
+
+            //reduce the capacity
+            self.data_capacity -= self.data_used_helper(&direction, &mode);
+            let mut pair = (direction.clone(), mode.clone());
+            //insert the image
+            self.have_image.insert(direction.clone(), mode.clone());
+
+            //update the capacity
+            let old_capacity = self.data_used_helper(&direction, mode);
+            self.data_stored.insert(   pair,old_capacity+1);
+
         }
     }
     fn supports_helper(&mut self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool{
