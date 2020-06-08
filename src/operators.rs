@@ -184,11 +184,11 @@ pub struct SatelliteState {
     onboard: Vec<SatelliteEnum>,
     supports: Vec<SatelliteEnum>,
     pointing: SatelliteEnum,
-    power_avail: Vec<SatelliteEnum>,
+    power_avail: bool,
     power_on: Vec<SatelliteEnum>,
     calibrated: Vec<SatelliteEnum>,
     have_image: Vec<SatelliteEnum>,
-    calibration_target: Vec<SatelliteEnum>,
+    calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>,
     data_capacity: BTreeMap<SatelliteEnum, u32>,
     data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
     //This is incorrect
@@ -199,9 +199,7 @@ pub struct SatelliteState {
 }
 
 impl SatelliteState {
-    pub fn new(onboard: Vec<SatelliteEnum>, supports: Vec<SatelliteEnum>, pointing: SatelliteEnum, power_avail: Vec<SatelliteEnum>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: Vec<SatelliteEnum>, calibration_target: Vec<SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32, fuel: u32) -> Self {
-        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel }
-    }
+
 }
 
 
@@ -249,6 +247,46 @@ impl SatelliteState {
                 self.set_slew_time(new_direction, previous_direction, self.fuel - 1);
                 self.set_slew_time(new_direction, previous_direction, self.fuel_used + 1);
             }
+        }
+    }
+    fn switch_on(&mut self, instrument : &SatelliteEnum){
+        //precondition
+        if self.onboard.contains(instrument) && self.power_avail{
+            //effect
+            let instrument_clone = instrument.clone();
+
+            self.power_on.push(instrument_clone);
+
+            //See if the instrument is calibrated and remove the calibration
+            //https://stackoverflow.com/a/37482592 Why doesn't Rust have indexOf????
+            if self.calibrated.contains(instrument){
+                let index = self.calibrated.iter().position(|s| s==instrument).unwrap();
+                self.calibrated.remove(index);
+            }
+            self.power_avail = false;
+        }
+    }
+    pub fn switch_off(&mut self, instrument: &SatelliteEnum){
+        if self.onboard.contains(instrument) && self.power_on.contains(instrument){
+            //Remove instrument from the power on
+            if self.power_on.contains(instrument){
+                let index = self.power_on.iter().position(|s| s==instrument).unwrap();
+                self.power_on.remove(index);
+            }
+            self.power_avail = true;
+        }
+    }
+
+    pub fn calibrate(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum){
+        if self.onboard.contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing==*direction && self.power_on.contains(instrument){
+            let instrument_clone = instrument.clone();
+            self.calibrated.push(instrument_clone);
+        }
+    }
+    fn calibrate_helper(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum)-> bool{
+        match self.calibration_target.get(instrument){
+            Some(x) => return x==direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+            None => return false, //If the lookup fails, the if statement should fail.
         }
     }
 }
