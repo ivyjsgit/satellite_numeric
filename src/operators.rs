@@ -182,16 +182,15 @@ pub enum SatelliteEnum {
 #[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub struct SatelliteState {
     onboard: Vec<SatelliteEnum>,
-    supports: Vec<SatelliteEnum>,
+    supports: BTreeMap<SatelliteEnum, SatelliteEnum>,
     pointing: SatelliteEnum,
     power_avail: bool,
     power_on: Vec<SatelliteEnum>,
     calibrated: Vec<SatelliteEnum>,
     have_image: Vec<SatelliteEnum>,
     calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    data_capacity: BTreeMap<SatelliteEnum, u32>,
+    data_capacity: u32,
     data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
-    //This is incorrect
     satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>,
     slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
     fuel_used: u32,
@@ -205,8 +204,8 @@ impl SatelliteState {
 
 impl SatelliteState {
     //data_capacity
-    pub fn set_data_capacity(&mut self, satellite: &SatelliteEnum, capacity: u32) {
-        self.data_capacity.insert(satellite.clone(), capacity);
+    pub fn set_data_capacity(&mut self, capacity: u32) {
+        self.data_capacity = capacity;
     }
     //data_stored
     pub fn set_data_stored(&mut self, direction: &SatelliteEnum, mode: &SatelliteEnum, size: u32) {
@@ -284,9 +283,28 @@ impl SatelliteState {
         }
     }
     fn calibrate_helper(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum)-> bool{
-        match self.calibration_target.get(instrument){
-            Some(x) => return x==direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
-            None => return false, //If the lookup fails, the if statement should fail.
+        return match self.calibration_target.get(instrument) {
+            Some(x) => x == direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+            None => false, //If the lookup fails, the if statement should fail.
+        }
+    }
+    pub fn take_image(&mut self, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum){
+        if self.calibrated.contains(instrument) && self.onboard.contains(instrument) && self.supports_helper(instrument, mode) && self.power_on.contains(instrument) && (self.pointing == direction) && (self.power_on.contains(instrument)) && (self.data_capacity >= self.data_used_helper(&direction, &mode)){
+         //I'm not sure what to do for the effect here.
+        }
+    }
+    fn supports_helper(&mut self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool{
+        return match self.supports.get(&instrument) {
+            Some(x) => x == mode, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+            None => false, //If the lookup fails, the if statement should fail.
+        }
+
+    }
+    fn data_used_helper(&mut self, direction : &SatelliteEnum, mode: &SatelliteEnum) -> u32 {
+        let pair = &(direction.clone(), mode.clone());
+        return match self.data_stored.get(pair){
+            Some(x) => *x,
+            None => 0,
         }
     }
 }
