@@ -198,7 +198,9 @@ pub struct SatelliteState {
 }
 
 impl SatelliteState {
-
+    pub fn new(onboard: Vec<SatelliteEnum>, supports: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: SatelliteEnum, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: u32, data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32, fuel: u32) -> Self {
+        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel }
+    }
 }
 
 
