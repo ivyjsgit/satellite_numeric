@@ -181,37 +181,37 @@ pub enum SatelliteEnum {
 
 #[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub struct SatelliteState {
-    onboard: Vec<SatelliteEnum>,
+    //map satellite -> vec<instrument>
+    onboard: BTreeMap<SatelliteEnum,Vec<SatelliteEnum>>,
     supports: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    pointing: SatelliteEnum,
+    //map satellite -> direction
+    pointing: BTreeMap<SatelliteEnum,SatelliteEnum>,
     power_avail: bool,
     power_on: Vec<SatelliteEnum>,
     calibrated: Vec<SatelliteEnum>,
     have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
     calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    data_capacity: u32,
-    data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
+    //map satelite -> u32
+    data_capacity: BTreeMap<SatelliteEnum,u32>,
+    //needs to be u32
+    total_data_stored: u32,
+    satellite_data_stored: BTreeMap<SatelliteEnum, u32>,
     satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>,
     slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
     fuel_used: u32,
     fuel: u32,
 }
 
-impl SatelliteState {
-    pub fn new(onboard: Vec<SatelliteEnum>, supports: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: SatelliteEnum, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: u32, data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32, fuel: u32) -> Self {
-        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel }
-    }
-}
 
 
 impl SatelliteState {
     //data_capacity
-    pub fn set_data_capacity(&mut self, capacity: u32) {
-        self.data_capacity = capacity;
+    pub fn set_data_capacity(&mut self, satellite : SatelliteEnum, capacity: u32) {
+        self.data_capacity.insert(satellite,capacity);
     }
     //data_stored
-    pub fn set_data_stored(&mut self, direction: &SatelliteEnum, mode: &SatelliteEnum, size: u32) {
-        self.data_stored.insert((direction.clone(), mode.clone()), size);
+    pub fn set_data_stored(&mut self, size: u32) {
+        self.total_data_stored = size;
     }
     //slew_time
     pub fn set_slew_time(&mut self, a: &SatelliteEnum, b: &SatelliteEnum, time: u32) {
@@ -231,28 +231,38 @@ impl SatelliteState {
     // GJF: *** Because SatelliteEnum is not a Copy type, we need to either lend it to
     //  turn_to_helper() or clone it when passing it to turn_to_helper(). I have reworked
     //  things so that we are lending it.
-    pub fn turn_to(&mut self, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
-        if (self.pointing == *previous_direction) && (new_direction != previous_direction) {
+    pub fn turn_to(&mut self, satellite : &SatelliteEnum, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
+        if (self.pointing_helper(satellite,previous_direction)) && (new_direction != previous_direction) {
             // GJF: *** I had to clone them here to create the key for the lookup.
             let key = (new_direction.clone(), previous_direction.clone());
-            match self.slew_time.get(&key) {
-                Some(x) => self.turn_to_helper(*x, new_direction, previous_direction), //We have to use a helper here because matches are 1 liners.
-                None => eprintln!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1),
-            }
+            // GJF: *** Separate out the get to avoid the borrow conflict:
+            let slew_time = match self.slew_time.get(&key) {
+                Some(x) => *x,
+                None => panic!(format!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1))
+            };
+            self.turn_to_helper(satellite, slew_time, new_direction, previous_direction);
         }
     }
 
-    fn turn_to_helper(&mut self, x: u32, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
+    fn pointing_helper(&mut self, satellite: &SatelliteEnum, direction: &SatelliteEnum)-> bool{
+        return match self.pointing.get(satellite) {
+            Some(x) => x == direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+            None => false, //If the lookup fails, the if statement should fail.
+        }
+    }
+
+
+    fn turn_to_helper(&mut self, satellite: &SatelliteEnum, x: u32, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
         if self.fuel >= x {
-            if self.pointing == *new_direction && self.pointing != *previous_direction {
+            if self.pointing_helper(satellite,new_direction) && !self.pointing_helper(satellite,previous_direction) {
                 self.set_slew_time(new_direction, previous_direction, self.fuel - 1);
                 self.set_slew_time(new_direction, previous_direction, self.fuel_used + 1);
             }
         }
     }
-    fn switch_on(&mut self, instrument : &SatelliteEnum){
+    fn switch_on(&mut self, instrument : &SatelliteEnum, satellite : &SatelliteEnum){
         //precondition
-        if self.onboard.contains(instrument) && self.power_avail{
+        if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_avail{
             //effect
             let instrument_clone = instrument.clone();
 
@@ -267,8 +277,8 @@ impl SatelliteState {
             self.power_avail = false;
         }
     }
-    pub fn switch_off(&mut self, instrument: &SatelliteEnum){
-        if self.onboard.contains(instrument) && self.power_on.contains(instrument){
+    pub fn switch_off(&mut self, instrument: &SatelliteEnum, satellite : &SatelliteEnum){
+        if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_on.contains(instrument){
             //Remove instrument from the power on
             if self.power_on.contains(instrument){
                 let index = self.power_on.iter().position(|s| s==instrument).unwrap();
@@ -278,8 +288,8 @@ impl SatelliteState {
         }
     }
 
-    pub fn calibrate(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum){
-        if self.onboard.contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing==*direction && self.power_on.contains(instrument){
+    pub fn calibrate(&mut self, satellite : &SatelliteEnum,instrument: &SatelliteEnum, direction: &SatelliteEnum){
+        if self.onboard.get(satellite).unwrap().contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing_helper(satellite, direction) && self.power_on.contains(instrument){
             let instrument_clone = instrument.clone();
             self.calibrated.push(instrument_clone);
         }
@@ -290,18 +300,27 @@ impl SatelliteState {
             None => false, //If the lookup fails, the if statement should fail.
         }
     }
-    pub fn take_image(&mut self, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum){
-        if self.calibrated.contains(instrument) && self.onboard.contains(instrument) && self.supports_helper(instrument, mode) && self.power_on.contains(instrument) && (self.pointing == direction) && (self.power_on.contains(instrument)) && (self.data_capacity >= self.data_used_helper(&direction, &mode)){
+    pub fn take_image(&mut self, satellite : &SatelliteEnum, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum){
+        // GJF: *** To solve the ownership problem, we store the capacity in a local
+        //      variable where it is copied out of self. We then use that local variable
+        //      wherever we need it.
+        let satellite_capacity = *(self.data_capacity.get(satellite).unwrap());
+        if self.calibrated.contains(instrument) &&
+            self.onboard.get(satellite).unwrap().contains(instrument) &&
+            self.supports_helper(instrument, mode) &&
+            self.power_on.contains(instrument) &&
+            self.pointing_helper(satellite,&direction) &&
+            satellite_capacity >= self.get_satellite_data_used(&satellite) {
 
             //reduce the capacity
-            self.data_capacity -= self.data_used_helper(&direction, &mode);
-            let mut pair = (direction.clone(), mode.clone());
+            let subtracted_capacity = satellite_capacity - self.get_satellite_data_used(&satellite);
+            self.data_capacity.insert(satellite.clone(), subtracted_capacity);
             //insert the image
             self.have_image.insert(direction.clone(), mode.clone());
 
             //update the capacity
-            let old_capacity = self.data_used_helper(&direction, mode);
-            self.data_stored.insert(   pair,old_capacity+1);
+            let old_capacity = self.get_satellite_data_used(&satellite);
+            self.total_data_stored = old_capacity //add old_capacity
 
         }
     }
@@ -312,9 +331,8 @@ impl SatelliteState {
         }
 
     }
-    fn data_used_helper(&mut self, direction : &SatelliteEnum, mode: &SatelliteEnum) -> u32 {
-        let pair = &(direction.clone(), mode.clone());
-        return match self.data_stored.get(pair){
+    fn get_satellite_data_used(&mut self, satellite: &SatelliteEnum) -> u32 {
+        return match self.satellite_data_stored.get(satellite){
             Some(x) => *x,
             None => 0,
         }
