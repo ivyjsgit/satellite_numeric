@@ -317,11 +317,9 @@ impl SatelliteState {
             self.data_capacity.insert(satellite.clone(), subtracted_capacity);
             //insert the image
             self.have_image.insert(direction.clone(), mode.clone());
-
             //update the capacity
             let old_capacity = self.get_satellite_data_used(&satellite);
             self.total_data_stored = old_capacity //add old_capacity
-
         }
     }
     fn supports_helper(&mut self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool{
@@ -329,7 +327,6 @@ impl SatelliteState {
             Some(x) => x == mode, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.
         }
-
     }
     fn get_satellite_data_used(&mut self, satellite: &SatelliteEnum) -> u32 {
         return match self.satellite_data_stored.get(satellite){
@@ -337,9 +334,21 @@ impl SatelliteState {
             None => 0,
         }
     }
+    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, total_data_stored: u32, satellite_data_stored: BTreeMap<SatelliteEnum, u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32, fuel: u32) -> Self {
+        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, total_data_stored, satellite_data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel }
+    }
 }
 
+pub struct SatelliteGoals{
+    have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
+    fuel_used: u32
+}
 
-
-
-
+impl SatelliteGoals {
+    pub fn new(have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, fuel_used: u32) -> Self {
+        SatelliteGoals { have_image, fuel_used }
+    }
+    pub fn all_met_in() -> bool{
+        return false
+    }
+}
