@@ -194,7 +194,8 @@ pub struct SatelliteState {
     //map satelite -> u32
     data_capacity: BTreeMap<SatelliteEnum,u32>,
     //needs to be u32
-    data_stored: u32,
+    total_data_stored: u32,
+    satellite_data_stored: BTreeMap<SatelliteEnum, u32>,
     satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>,
     slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
     fuel_used: u32,
@@ -210,7 +211,7 @@ impl SatelliteState {
     }
     //data_stored
     pub fn set_data_stored(&mut self, size: u32) {
-        self.data_stored = size;
+        self.total_data_stored = size;
     }
     //slew_time
     pub fn set_slew_time(&mut self, a: &SatelliteEnum, b: &SatelliteEnum, time: u32) {
@@ -298,18 +299,18 @@ impl SatelliteState {
         }
     }
     pub fn take_image(&mut self, satellite : &SatelliteEnum, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum){
-        if self.calibrated.contains(instrument) && self.onboard.get(satellite).unwrap().contains(instrument) && self.supports_helper(instrument, mode) && self.power_on.contains(instrument) && (self.pointing_helper(satellite,&direction)) && (self.power_on.contains(instrument)) && (self.data_capacity.get(satellite).unwrap() >= &self.data_used_helper(&direction, &mode)){
+        if self.calibrated.contains(instrument) && self.onboard.get(satellite).unwrap().contains(instrument) && self.supports_helper(instrument, mode) && self.power_on.contains(instrument) && (self.pointing_helper(satellite,&direction)) && (self.power_on.contains(instrument)) && (self.data_capacity.get(satellite).unwrap() >= &self.get_satellite_data_used(&satellite)){
 
             //reduce the capacity
-            let subtracted_capacity = self.data_capacity.get(satellite).unwrap() - self.data_used_helper(&direction, &mode);
+            let subtracted_capacity = self.data_capacity.get(satellite).unwrap() - self.get_satellite_data_used(&satellite);
             self.data_capacity.insert(satellite.clone(), subtracted_capacity);
             //insert the image
             self.have_image.insert(direction.clone(), mode.clone());
 
             //update the capacity
-            let old_capacity = self.data_used_helper(&direction, mode);
+            let old_capacity = self.get_satellite_data_used(&satellite);
             let mut pair = (direction.clone(), mode.clone());
-            self.data_stored = old_capacity //add old_capacity
+            self.total_data_stored = old_capacity //add old_capacity
 
         }
     }
@@ -320,9 +321,8 @@ impl SatelliteState {
         }
 
     }
-    fn data_used_helper(&mut self, direction : &SatelliteEnum, mode: &SatelliteEnum) -> u32 {
-        let pair = &(direction.clone(), mode.clone());
-        return match self.data_stored.get(pair){
+    fn get_satellite_data_used(&mut self, satellite: &SatelliteEnum) -> u32 {
+        return match self.satellite_data_stored.get(satellite){
             Some(x) => *x,
             None => 0,
         }
