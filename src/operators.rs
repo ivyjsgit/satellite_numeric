@@ -235,10 +235,12 @@ impl SatelliteState {
         if (self.pointing_helper(satellite,previous_direction)) && (new_direction != previous_direction) {
             // GJF: *** I had to clone them here to create the key for the lookup.
             let key = (new_direction.clone(), previous_direction.clone());
-            match self.slew_time.get(&key) {
-                Some(x) => self.turn_to_helper(satellite, *x, new_direction, previous_direction), //We have to use a helper here because matches are 1 liners.
-                None => eprintln!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1),
-            }
+            // GJF: *** Separate out the get to avoid the borrow conflict:
+            let slew_time = match self.slew_time.get(&key) {
+                Some(x) => *x,
+                None => panic!(format!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1))
+            };
+            self.turn_to_helper(satellite, slew_time, new_direction, previous_direction);
         }
     }
 
@@ -299,17 +301,25 @@ impl SatelliteState {
         }
     }
     pub fn take_image(&mut self, satellite : &SatelliteEnum, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum){
-        if self.calibrated.contains(instrument) && self.onboard.get(satellite).unwrap().contains(instrument) && self.supports_helper(instrument, mode) && self.power_on.contains(instrument) && (self.pointing_helper(satellite,&direction)) && (self.power_on.contains(instrument)) && (self.data_capacity.get(satellite).unwrap() >= &self.get_satellite_data_used(&satellite)){
+        // GJF: *** To solve the ownership problem, we store the capacity in a local
+        //      variable where it is copied out of self. We then use that local variable
+        //      wherever we need it.
+        let satellite_capacity = *(self.data_capacity.get(satellite).unwrap());
+        if self.calibrated.contains(instrument) &&
+            self.onboard.get(satellite).unwrap().contains(instrument) &&
+            self.supports_helper(instrument, mode) &&
+            self.power_on.contains(instrument) &&
+            self.pointing_helper(satellite,&direction) &&
+            satellite_capacity >= self.get_satellite_data_used(&satellite) {
 
             //reduce the capacity
-            let subtracted_capacity = self.data_capacity.get(satellite).unwrap() - self.get_satellite_data_used(&satellite);
+            let subtracted_capacity = satellite_capacity - self.get_satellite_data_used(&satellite);
             self.data_capacity.insert(satellite.clone(), subtracted_capacity);
             //insert the image
             self.have_image.insert(direction.clone(), mode.clone());
 
             //update the capacity
             let old_capacity = self.get_satellite_data_used(&satellite);
-            let mut pair = (direction.clone(), mode.clone());
             self.total_data_stored = old_capacity //add old_capacity
 
         }
