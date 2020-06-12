@@ -352,3 +352,34 @@ impl SatelliteGoals {
         return false
     }
 }
+
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub enum SatelliteOperator<SatelliteEnum> {
+    TurnTo(SatelliteEnum,SatelliteEnum,SatelliteEnum),
+    SwitchOn(SatelliteEnum,SatelliteEnum),
+    SwitchOff(SatelliteEnum,SatelliteEnum),
+    Calibrate(SatelliteEnum,SatelliteEnum,SatelliteEnum),
+    TakeImage(SatelliteEnum,SatelliteEnum,SatelliteEnum,SatelliteEnum)
+}
+
+impl Operator for SatelliteOperator<SatelliteEnum> {
+    type S = SatelliteState;
+
+    fn attempt_update(&self, state: &mut SatelliteState) -> bool {
+        use SatelliteOperator::*;
+        match self {
+            TurnTo(satellite,new_direction, previous_direction) => state.turn_to(*satellite,*new_direction, *previous_direction),
+            SwitchOn(instrument, satellite) => state.switch_on(*instrument, *satellite),
+            SwitchOff(instrument, satellite) => state.switch_off(*instrument, *satellite),
+            Calibrate(satellite, instrument, direction) => state.calibrate(*satellite, *instrument, *direction),
+            TakeImage(satellite, direction, instrument, mode) => state.take_image(*satellite, *direction, *instrument, *mode)
+
+        }
+    }
+}
+
+pub fn is_satellite_valid<B: Atom>(plan: &Vec<SatelliteOperator<B>>, start: &SatelliteState, goal: &SatelliteGoals) -> bool {
+    let mut state = start.clone();
+    let preconds_met = plan.iter().all(|step| step.attempt_update(&mut state));
+    preconds_met && goal.all_met_in(&state)
+}
