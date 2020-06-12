@@ -357,6 +357,7 @@ impl SatelliteState {
 }
 
 pub struct SatelliteGoals{
+    //Have_image maps from location -> instrument
     have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
     fuel_used: u32
 }
@@ -366,7 +367,14 @@ impl SatelliteGoals {
         SatelliteGoals { have_image, fuel_used }
     }
     pub fn all_met_in(&self, state: &SatelliteState) -> bool{
-        return false
+        for location in self.have_image.keys(){
+            let goal_instrument = self.have_image.get(location).unwrap();
+            match state.have_image.get(location) {
+                Some(instrument) => if instrument != goal_instrument {return false},
+                None => return false //If the location isn't found.
+            }
+        }
+        return true //If we have gotten through the entire list, return true
     }
 }
 
