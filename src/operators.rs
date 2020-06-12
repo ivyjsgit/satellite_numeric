@@ -171,12 +171,14 @@ impl<B: Atom> Operator for BlockOperator<B> {
 //These come from the predicates
 
 
-#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug, Display)]
+#[derive(Clone, Copy, PartialOrd, PartialEq, Ord, Eq, Debug, Display)]
 pub enum SatelliteEnum {
-    Instrument(String),
-    Satellite(String),
-    Mode(String),
-    Direction(String),
+    //We will have to have a lookup table that goes from usize -> String for these.
+    //This is just here because you can't have the copy attribute because Strings aren't copyable.
+    Instrument(usize),
+    Satellite(usize),
+    Mode(usize),
+    Direction(usize),
 }
 
 #[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
@@ -231,7 +233,7 @@ impl SatelliteState {
     // GJF: *** Because SatelliteEnum is not a Copy type, we need to either lend it to
     //  turn_to_helper() or clone it when passing it to turn_to_helper(). I have reworked
     //  things so that we are lending it.
-    pub fn turn_to(&mut self, satellite : &SatelliteEnum, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
+    pub fn turn_to(&mut self, satellite : &SatelliteEnum, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) -> bool{
         if (self.pointing_helper(satellite,previous_direction)) && (new_direction != previous_direction) {
             // GJF: *** I had to clone them here to create the key for the lookup.
             let key = (new_direction.clone(), previous_direction.clone());
@@ -241,6 +243,9 @@ impl SatelliteState {
                 None => panic!(format!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1))
             };
             self.turn_to_helper(satellite, slew_time, new_direction, previous_direction);
+            return true;
+        }else{
+            return false;
         }
     }
 
@@ -260,7 +265,7 @@ impl SatelliteState {
             }
         }
     }
-    fn switch_on(&mut self, instrument : &SatelliteEnum, satellite : &SatelliteEnum){
+    fn switch_on(&mut self, instrument : &SatelliteEnum, satellite : &SatelliteEnum) -> bool{
         //precondition
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_avail{
             //effect
@@ -275,23 +280,32 @@ impl SatelliteState {
                 self.calibrated.remove(index);
             }
             self.power_avail = false;
+            return true;
+        }else{
+           return false;
         }
     }
-    pub fn switch_off(&mut self, instrument: &SatelliteEnum, satellite : &SatelliteEnum){
-        if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_on.contains(instrument){
+    pub fn switch_off(&mut self, instrument: &SatelliteEnum, satellite : &SatelliteEnum) -> bool{
+        if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_on.contains(instrument) {
             //Remove instrument from the power on
-            if self.power_on.contains(instrument){
-                let index = self.power_on.iter().position(|s| s==instrument).unwrap();
+            if self.power_on.contains(instrument) {
+                let index = self.power_on.iter().position(|s| s == instrument).unwrap();
                 self.power_on.remove(index);
             }
             self.power_avail = true;
+            return true;
+        }else{
+            return false;
         }
     }
 
-    pub fn calibrate(&mut self, satellite : &SatelliteEnum,instrument: &SatelliteEnum, direction: &SatelliteEnum){
+    pub fn calibrate(&mut self, satellite : &SatelliteEnum,instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool{
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing_helper(satellite, direction) && self.power_on.contains(instrument){
             let instrument_clone = instrument.clone();
             self.calibrated.push(instrument_clone);
+            return true;
+        }else{
+            return false;
         }
     }
     fn calibrate_helper(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum)-> bool{
@@ -300,7 +314,7 @@ impl SatelliteState {
             None => false, //If the lookup fails, the if statement should fail.
         }
     }
-    pub fn take_image(&mut self, satellite : &SatelliteEnum, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum){
+    pub fn take_image(&mut self, satellite : &SatelliteEnum, direction: SatelliteEnum, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool{
         // GJF: *** To solve the ownership problem, we store the capacity in a local
         //      variable where it is copied out of self. We then use that local variable
         //      wherever we need it.
@@ -319,7 +333,10 @@ impl SatelliteState {
             self.have_image.insert(direction.clone(), mode.clone());
             //update the capacity
             let old_capacity = self.get_satellite_data_used(&satellite);
-            self.total_data_stored = old_capacity //add old_capacity
+            self.total_data_stored = old_capacity; //add old_capacity
+            return true;
+        }else{
+            return false;
         }
     }
     fn supports_helper(&mut self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool{
@@ -348,7 +365,7 @@ impl SatelliteGoals {
     pub fn new(have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, fuel_used: u32) -> Self {
         SatelliteGoals { have_image, fuel_used }
     }
-    pub fn all_met_in() -> bool{
+    pub fn all_met_in(&self, state: &SatelliteState) -> bool{
         return false
     }
 }
@@ -368,18 +385,19 @@ impl Operator for SatelliteOperator<SatelliteEnum> {
     fn attempt_update(&self, state: &mut SatelliteState) -> bool {
         use SatelliteOperator::*;
         match self {
-            TurnTo(satellite,new_direction, previous_direction) => state.turn_to(*satellite,*new_direction, *previous_direction),
-            SwitchOn(instrument, satellite) => state.switch_on(*instrument, *satellite),
-            SwitchOff(instrument, satellite) => state.switch_off(*instrument, *satellite),
-            Calibrate(satellite, instrument, direction) => state.calibrate(*satellite, *instrument, *direction),
-            TakeImage(satellite, direction, instrument, mode) => state.take_image(*satellite, *direction, *instrument, *mode)
+            TurnTo(satellite,new_direction, previous_direction) => state.turn_to(&*satellite,&*new_direction, &*previous_direction),
+            SwitchOn(instrument, satellite) => state.switch_on(&*instrument, &*satellite),
+            SwitchOff(instrument, satellite) => state.switch_off(&*instrument, &*satellite),
+            Calibrate(satellite, instrument, direction) => state.calibrate(&*satellite, &*instrument, &*direction),
+            TakeImage(satellite, direction, instrument, mode) => state.take_image(&*satellite, *direction, &*instrument, &*mode)
 
         }
     }
 }
 
-pub fn is_satellite_valid<B: Atom>(plan: &Vec<SatelliteOperator<B>>, start: &SatelliteState, goal: &SatelliteGoals) -> bool {
+pub fn is_satellite_valid(plan: &Vec<SatelliteOperator<SatelliteEnum>>, start: &SatelliteState, goal: &SatelliteGoals) -> bool {
     let mut state = start.clone();
+
     let preconds_met = plan.iter().all(|step| step.attempt_update(&mut state));
     preconds_met && goal.all_met_in(&state)
 }
