@@ -1,6 +1,7 @@
 //Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
 use super::operators::*;
 use anyhop::{Atom, Method, MethodTag, Task, MethodResult, Goal};
+use crate::operators::SatelliteOperator::{SwitchOff, SwitchOn};
 
 pub fn is_done<B:Atom>(b1: B, state: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
     let pos = state.get_pos(b1);
@@ -61,7 +62,7 @@ impl <B:Atom> Method for BlockMethod<B> {
         }
     }
 }
-
+//schedule_all()
 fn move_blocks<B:Atom>(state: &BlockState<B>, goal: &BlockGoals<B>) -> MethodResult<BlockOperator<B>, BlockMethod<B>> {
     use BlockMethod::*; use MethodResult::*; use Task::*;
     let status: Vec<Status<B>> = state.all_blocks().iter().map(|b| Status::new(*b, state, goal)).collect();
@@ -79,12 +80,12 @@ fn move_blocks<B:Atom>(state: &BlockState<B>, goal: &BlockGoals<B>) -> MethodRes
         .collect();
     if waiting.len() == 0 {PlanFound} else {TaskLists(waiting)}
 }
-
+//schedule_one
 fn move_one<B:Atom>(block: B, pos: BlockPos<B>) -> MethodResult<BlockOperator<B>, BlockMethod<B>> {
     use BlockMethod::*; use MethodResult::*; use Task::*;
     TaskLists(vec![vec![MethodTag(Get(block)), MethodTag(Put(pos))]])
 }
-
+//Switching
 fn get<'a, B:Atom>(state: &BlockState<B>, block: B) -> MethodResult<BlockOperator<B>, BlockMethod<B>> {
     use BlockOperator::*; use MethodResult::*; use Task::*; use BlockPos::*;
     if state.clear(block) {
@@ -127,3 +128,35 @@ impl <B:Atom> Goal for BlockGoals<B> {
         vec![Task::MethodTag(BlockMethod::MoveBlocks)]
     }
 }
+
+/*
+
+Satellite Stuff
+
+ */
+
+#[derive(Copy, Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
+pub enum SatelliteMethod<SatelliteState>{
+    ScheduleAll,
+    ScheduleOne,
+    //SatelliteState, Satellite, Instrument
+    Switching(SatelliteState, SatelliteEnum, SatelliteEnum)
+}
+
+pub enum SatelliteStatus{
+    Done,
+    NotDone
+}
+
+pub fn Switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: SatelliteEnum) -> Vec<SatelliteOperator<SatelliteEnum>>{
+    return if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
+        vec![SwitchOff(instrument, satellite), SwitchOn(instrument, satellite)]
+    } else if state.power_on.is_empty() {
+        vec![SwitchOn(instrument, satellite)]
+    } else {
+        vec![]
+    }
+}
+
+
+
