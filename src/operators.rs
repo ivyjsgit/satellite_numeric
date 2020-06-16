@@ -3,6 +3,7 @@ use strum_macros::*;
 
 use std::collections::{BTreeSet, BTreeMap};
 use anyhop::{Atom, Operator};
+use crate::methods::SatelliteStatus;
 
 //keep this basically
 pub fn is_valid<B: Atom>(plan: &Vec<BlockOperator<B>>, start: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
@@ -202,6 +203,7 @@ pub struct SatelliteState {
     pub slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
     pub fuel_used: u32,
     pub fuel: u32,
+    pub status: SatelliteStatus,
 }
 
 
@@ -349,9 +351,6 @@ impl SatelliteState {
             Some(x) => *x,
             None => 0,
         };
-    }
-    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, total_data_stored: u32, satellite_data_stored: BTreeMap<SatelliteEnum, u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32, fuel: u32) -> Self {
-        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, total_data_stored, satellite_data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel }
     }
 }
 

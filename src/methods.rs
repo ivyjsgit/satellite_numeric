@@ -2,6 +2,8 @@
 use super::operators::*;
 use anyhop::{Atom, Method, MethodTag, Task, MethodResult, Goal};
 use crate::operators::SatelliteOperator::{SwitchOff, SwitchOn, TurnTo, Calibrate, TakeImage};
+use std::ptr::null;
+use anyhop::MethodResult::{TaskLists, PlanFound};
 
 pub fn is_done<B:Atom>(b1: B, state: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
     let pos = state.get_pos(b1);
@@ -143,9 +145,27 @@ pub enum SatelliteMethod {
     Switching(SatelliteEnum, SatelliteEnum)
 }
 
+#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub enum SatelliteStatus{
     Done,
-    NotDone
+    //state, satellite, instrument, mode, new_direction, previous_direction
+    NotDone(u32,SatelliteEnum,SatelliteEnum,SatelliteEnum,SatelliteEnum,SatelliteEnum)
+}
+
+
+
+impl SatelliteStatus{
+    pub fn new(identifier: u32, state: SatelliteState, satellite:SatelliteEnum, instrument:SatelliteEnum, mode:SatelliteEnum, new_direction:SatelliteEnum, previous_direction:SatelliteEnum) -> SatelliteStatus{
+        if is_satellite_done(state){
+            return SatelliteStatus::Done
+        }else{
+            return SatelliteStatus::NotDone(identifier,satellite,instrument,mode,new_direction,previous_direction)
+        }
+    }
+}
+
+fn is_satellite_done(satellite_state:SatelliteState) -> bool{
+    return false;
 }
 
 fn switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: SatelliteEnum) -> Vec<SatelliteOperator<SatelliteEnum>>{
@@ -158,14 +178,6 @@ fn switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: Satell
     }
 }
 
-/*
-//schedule_one
-fn move_one<B:Atom>(block: B, pos: BlockPos<B>) -> MethodResult<BlockOperator<B>, BlockMethod<B>> {
-    use BlockMethod::*; use MethodResult::*; use Task::*;
-    TaskLists(vec![vec![MethodTag(Get(block)), MethodTag(Put(pos))]])
-}
- */
-
 fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     use SatelliteMethod::*; use MethodResult::*; use Task::*;
     TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),
@@ -174,3 +186,9 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
                         Operator(TakeImage(satellite,new_direction,instrument,mode))]])
 }
 
+//state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum
+
+
+fn schedule_all(state:SatelliteState, goal: SatelliteGoals) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod>{
+    return TaskLists(vec![vec![MethodTag(schedule_one(&state,satellite,instrument,mode,new_direction,previous_direction)),MethodTag(schedule_all(state, goal))]])
+}
