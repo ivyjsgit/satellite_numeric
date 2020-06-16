@@ -136,11 +136,11 @@ Satellite Stuff
  */
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
-pub enum SatelliteMethod<SatelliteState>{
+pub enum SatelliteMethod {
     ScheduleAll,
     ScheduleOne,
     //SatelliteState, Satellite, Instrument
-    Switching(SatelliteState, SatelliteEnum, SatelliteEnum)
+    Switching(SatelliteEnum, SatelliteEnum)
 }
 
 pub enum SatelliteStatus{
@@ -166,8 +166,11 @@ fn move_one<B:Atom>(block: B, pos: BlockPos<B>) -> MethodResult<BlockOperator<B>
 }
  */
 
-fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, Vec<SatelliteOperator<SatelliteEnum>>> {
+fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     use SatelliteMethod::*; use MethodResult::*; use Task::*;
-    TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),MethodTag(switching(state, satellite, instrument)),Operator(Calibrate(satellite,instrument,new_direction)),Operator(TakeImage(satellite,new_direction,instrument,mode))]])
+    TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),
+                        MethodTag(Switching(satellite, instrument)),
+                        Operator(Calibrate(satellite,instrument,new_direction)),
+                        Operator(TakeImage(satellite,new_direction,instrument,mode))]])
 }
 
