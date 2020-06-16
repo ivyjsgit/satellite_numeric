@@ -1,7 +1,7 @@
 //Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
 use super::operators::*;
 use anyhop::{Atom, Method, MethodTag, Task, MethodResult, Goal};
-use crate::operators::SatelliteOperator::{SwitchOff, SwitchOn};
+use crate::operators::SatelliteOperator::{SwitchOff, SwitchOn, TurnTo, Calibrate, TakeImage};
 
 pub fn is_done<B:Atom>(b1: B, state: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
     let pos = state.get_pos(b1);
@@ -148,7 +148,7 @@ pub enum SatelliteStatus{
     NotDone
 }
 
-pub fn Switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: SatelliteEnum) -> Vec<SatelliteOperator<SatelliteEnum>>{
+fn switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: SatelliteEnum) -> Vec<SatelliteOperator<SatelliteEnum>>{
     return if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
         vec![SwitchOff(instrument, satellite), SwitchOn(instrument, satellite)]
     } else if state.power_on.is_empty() {
@@ -158,5 +158,16 @@ pub fn Switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: Sa
     }
 }
 
+/*
+//schedule_one
+fn move_one<B:Atom>(block: B, pos: BlockPos<B>) -> MethodResult<BlockOperator<B>, BlockMethod<B>> {
+    use BlockMethod::*; use MethodResult::*; use Task::*;
+    TaskLists(vec![vec![MethodTag(Get(block)), MethodTag(Put(pos))]])
+}
+ */
 
+fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, Vec<SatelliteOperator<SatelliteEnum>>> {
+    use SatelliteMethod::*; use MethodResult::*; use Task::*;
+    TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),MethodTag(switching(state, satellite, instrument)),Operator(Calibrate(satellite,instrument,new_direction)),Operator(TakeImage(satellite,new_direction,instrument,mode))]])
+}
 
