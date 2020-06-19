@@ -171,14 +171,15 @@ fn is_satellite_done(satellite_state:SatelliteState) -> bool{
     return false;
 }
 
-fn switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: SatelliteEnum) -> Vec<SatelliteOperator<SatelliteEnum>>{
-    return if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
-        vec![SwitchOff(instrument, satellite), SwitchOn(instrument, satellite)]
+fn switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
+    TaskLists(vec![if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
+        vec![Operator(SwitchOff(instrument, satellite)),
+             Operator(SwitchOn(instrument, satellite))]
     } else if state.power_on.is_empty() {
-        vec![SwitchOn(instrument, satellite)]
+        vec![Operator(SwitchOn(instrument, satellite))]
     } else {
         vec![]
-    }
+    }])
 }
 
 fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
@@ -189,7 +190,7 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
                         Operator(TakeImage(satellite,new_direction,instrument,mode))]])
 }
 
-fn schedule_all(state:SatelliteState, goal: SatelliteGoals) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod>{
+fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod>{
     let mut tasks : Vec<Vec<Task<SatelliteOperator<SatelliteEnum>,SatelliteMethod>>> = vec![vec![]];
     let mut completed_tasks: Vec<SatelliteEnum> = vec![];
 
@@ -236,7 +237,7 @@ impl Method for SatelliteMethod{
     fn apply(&self, state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod>{
         use SatelliteMethod::*;
         match self{
-            ScheduleAll => schedule_all(*state, *goal),
+            ScheduleAll => schedule_all(state, goal),
             //Here is where you you can clearly see the conflicts of the Enum and the method.
             // ScheduleOne(SatelliteEnum) => schedule_one(state, satellite, instrument, mode, new_direction, previous_direction)
             Switching(satellite, instrument) => switching(state, satellite.clone(), instrument.clone()),
