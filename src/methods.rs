@@ -143,7 +143,7 @@ Satellite Stuff
 pub enum SatelliteMethod {
     ScheduleAll,
     //state, satellite, instrument, mode, new_direction, previous_direction
-    ScheduleOne(SatelliteEnum),
+    ScheduleOne(SatelliteEnum,SatelliteEnum,SatelliteEnum,SatelliteEnum,SatelliteEnum),
     //SatelliteState, Satellite, Instrument
     Switching(SatelliteEnum, SatelliteEnum)
 }
@@ -197,7 +197,10 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
     for goal_image in goal.have_image.keys(){
         if !(state.have_image.get(goal_image) == goal.have_image.get(goal_image)){
             let goal_image_clone = goal_image.clone();
-            tasks.push(vec![Task::Method(ScheduleOne(goal_image_clone)),Task::Method(ScheduleAll)]);
+            //state, satellite, instrument, mode, new_direction, previous_direction
+            // tasks.push(vec![Task::Method(ScheduleOne(goal_image_clone)),Task::Method(ScheduleAll)]);
+            tasks.push(vec![Task::Method(ScheduleOne(state,)),Task::Method(ScheduleAll)]);
+
         }else{
             let image_clone = goal_image.clone();
             completed_tasks.push(image_clone);
@@ -210,24 +213,6 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         return TaskLists(tasks);
     }
 }
-/*
-impl <B:Atom> Method for BlockMethod<B> {
-    type S = BlockState<B>;
-    type G = BlockGoals<B>;
-    type O = BlockOperator<B>;
-    type T = BlockMethod<B>;
-
-    fn apply(&self, state: &BlockState<B>, goal: &BlockGoals<B>) -> MethodResult<BlockOperator<B>, BlockMethod<B>> {
-        use BlockMethod::*;
-        match self {
-            MoveBlocks => move_blocks(state, goal),
-            MoveOne(block, pos) => move_one(*block, *pos),
-            Get(block) => get(state, *block),
-            Put(pos) => put(state, *pos)
-        }
-    }
-}
-*/
 
 impl Method for SatelliteMethod{
     type S = SatelliteState;
@@ -238,8 +223,7 @@ impl Method for SatelliteMethod{
         use SatelliteMethod::*;
         match self{
             ScheduleAll => schedule_all(state, goal),
-            //Here is where you you can clearly see the conflicts of the Enum and the method.
-            // ScheduleOne(SatelliteEnum) => schedule_one(state, satellite, instrument, mode, new_direction, previous_direction)
+            ScheduleOne(satellite, instrument, mode, new_direction, previous_direction) => schedule_one(state, satellite.clone(), instrument.clone(), mode.clone(), new_direction.clone(), previous_direction.clone()),
             Switching(satellite, instrument) => switching(state, satellite.clone(), instrument.clone()),
         }
     }
