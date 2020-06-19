@@ -354,10 +354,11 @@ impl SatelliteState {
     }
 }
 
+#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub struct SatelliteGoals {
     //Have_image maps from location -> instrument
-    have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    fuel_used: u32,
+    pub have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
+    pub fuel_used: u32,
 }
 
 impl SatelliteGoals {
