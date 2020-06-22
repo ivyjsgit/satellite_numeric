@@ -3,6 +3,7 @@ use strum_macros::*;
 
 use std::collections::{BTreeSet, BTreeMap};
 use anyhop::{Atom, Operator};
+use crate::methods::SatelliteStatus;
 
 //keep this basically
 pub fn is_valid<B: Atom>(plan: &Vec<BlockOperator<B>>, start: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
@@ -185,6 +186,7 @@ pub enum SatelliteEnum {
 pub struct SatelliteState {
     //map satellite -> vec<instrument>
     pub onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>,
+    //instrument -> mode
     pub supports: BTreeMap<SatelliteEnum, SatelliteEnum>,
     //map satellite -> direction
     pub pointing: BTreeMap<SatelliteEnum, SatelliteEnum>,
@@ -202,6 +204,7 @@ pub struct SatelliteState {
     pub slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
     pub fuel_used: u32,
     pub fuel: u32,
+    pub status: SatelliteStatus,
 }
 
 
@@ -338,7 +341,7 @@ impl SatelliteState {
             return false;
         }
     }
-    fn supports_helper(&mut self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool {
+    pub fn supports_helper(&self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool {
         return match self.supports.get(&instrument) {
             Some(x) => x == mode, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.
@@ -350,15 +353,13 @@ impl SatelliteState {
             None => 0,
         };
     }
-    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, total_data_stored: u32, satellite_data_stored: BTreeMap<SatelliteEnum, u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, fuel_used: u32, fuel: u32) -> Self {
-        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, total_data_stored, satellite_data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel }
-    }
 }
 
+#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub struct SatelliteGoals {
     //Have_image maps from location -> instrument
-    have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    fuel_used: u32,
+    pub have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
+    pub fuel_used: u32,
 }
 
 impl SatelliteGoals {
