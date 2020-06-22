@@ -186,6 +186,7 @@ pub enum SatelliteEnum {
 pub struct SatelliteState {
     //map satellite -> vec<instrument>
     pub onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>,
+    //instrument -> mode
     pub supports: BTreeMap<SatelliteEnum, SatelliteEnum>,
     //map satellite -> direction
     pub pointing: BTreeMap<SatelliteEnum, SatelliteEnum>,

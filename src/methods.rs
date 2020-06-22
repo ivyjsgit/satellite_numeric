@@ -196,10 +196,17 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
 
     for goal_image in goal.have_image.keys(){
         if !(state.have_image.get(goal_image) == goal.have_image.get(goal_image)){
+
             let goal_image_clone = goal_image.clone();
+            let satellite = ?;
+            let mode = goal.have_image.get(goal_image).unwrap();
+            let instrument = brute_force_instrument(state, mode); //First look up the goal image to see which mode it should be in, and then look up which mode it should be in.
+            let new_direction = goal_image_clone;
+            let previous_direction = ?;
+
             //state, satellite, instrument, mode, new_direction, previous_direction
             // tasks.push(vec![Task::Method(ScheduleOne(goal_image_clone)),Task::Method(ScheduleAll)]);
-            tasks.push(vec![Task::Method(ScheduleOne(state,)),Task::Method(ScheduleAll)]);
+            tasks.push(vec![Task::Method(ScheduleOne(satellite,instrument,mode.clone(),new_direction,previous_direction)),Task::Method(ScheduleAll)]);
 
         }else{
             let image_clone = goal_image.clone();
@@ -207,11 +214,21 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         }
     }
 
-    if goal.have_image.keys().eq(&completed_tasks){
-        return PlanFound
-    }else {
-        return TaskLists(tasks);
+    return if goal.have_image.keys().eq(&completed_tasks) {
+        PlanFound
+    } else {
+        TaskLists(tasks)
     }
+}
+
+fn brute_force_instrument(state: &SatelliteState, mode:&SatelliteEnum)->Optional<SatelliteEnum>{
+    for instrument in state.supports.values(){
+        if state.supports.get(instrument)==mode{
+            return Just(instrument.clone());
+        }
+    }
+    return None;
+
 }
 
 impl Method for SatelliteMethod{
