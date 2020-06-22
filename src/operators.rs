@@ -1,12 +1,12 @@
+//Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use anyhop::{Atom, Operator};
-//Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
 use strum_macros::*;
 
 use crate::methods::SatelliteStatus;
 
-//keep this basically
 pub fn is_valid<B: Atom>(plan: &Vec<BlockOperator<B>>, start: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
     let mut state = start.clone();
     let preconds_met = plan.iter().all(|step| step.attempt_update(&mut state));
