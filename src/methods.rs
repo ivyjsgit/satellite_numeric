@@ -15,6 +15,7 @@ use anyhop::Task::Operator;
 //     }
 // }
 //
+//done
 // #[derive(Copy, Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 // pub enum Status<B:Atom> {
 //     Done(B),
@@ -23,6 +24,7 @@ use anyhop::Task::Operator;
 //     Waiting(B)
 // }
 //
+//done
 // impl <B:Atom> Status<B> {
 //     pub fn new(b: B, state: &BlockState<B>, goal: &BlockGoals<B>) -> Self {
 //         if is_done(b, state, goal) {
@@ -113,7 +115,7 @@ use anyhop::Task::Operator;
 //         Failure
 //     }
 // }
-//
+// //doesn't need to be implemented
 // impl <B:Atom> MethodTag for BlockMethod<B> {
 //     type S = BlockState<B>;
 //     type G = BlockGoals<B>;
@@ -256,5 +258,13 @@ impl Method for SatelliteMethod{
             Switching(satellite, instrument) => switching(state, satellite.clone(), instrument.clone()),
         }
     }
+}
 
+impl Goal for SatelliteGoals{
+    type O = SatelliteOperator<SatelliteEnum>;
+    type M = SatelliteMethod;
+
+    fn starting_tasks(&self) -> Vec<Task<SatelliteOperator<SatelliteEnum>,SatelliteMethod>>{
+        vec![Task::Method(SatelliteMethod::ScheduleAll)]
+    }
 }
