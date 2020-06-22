@@ -1,10 +1,12 @@
+use anyhop::{Atom, Goal, Method, MethodResult, Task};
+use anyhop::MethodResult::{PlanFound, TaskLists};
+use anyhop::Task::Operator;
+
+use crate::methods::SatelliteMethod::{ScheduleAll, ScheduleOne};
+use crate::operators::SatelliteOperator::{Calibrate, SwitchOff, SwitchOn, TakeImage, TurnTo};
+
 //Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
 use super::operators::*;
-use anyhop::{Atom, Method, Task, MethodResult, Goal};
-use crate::operators::SatelliteOperator::{SwitchOff, SwitchOn, TurnTo, Calibrate, TakeImage};
-use anyhop::MethodResult::{TaskLists, PlanFound};
-use crate::methods::SatelliteMethod::{ScheduleOne, ScheduleAll};
-use anyhop::Task::Operator;
 
 // pub fn is_done<B:Atom>(b1: B, state: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
 //     let pos = state.get_pos(b1);
@@ -169,7 +171,6 @@ impl SatelliteStatus{
 }
 
 pub fn is_satellite_done(state:SatelliteState, goal: &SatelliteGoals) -> bool{
-    let state_clone = state.clone();
 
     for goal_image in goal.have_image.keys(){
         if !state.have_image.contains_key(goal_image){

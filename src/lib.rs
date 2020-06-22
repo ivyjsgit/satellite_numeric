@@ -1,5 +1,4 @@
 #![feature(option_result_contains)]
-#[macro_use]
 extern crate io_error;
 extern crate strum;
 extern crate strum_macros;

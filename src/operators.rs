@@ -1,8 +1,9 @@
+use std::collections::{BTreeMap, BTreeSet};
+
+use anyhop::{Atom, Operator};
 //Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
 use strum_macros::*;
 
-use std::collections::{BTreeSet, BTreeMap};
-use anyhop::{Atom, Operator};
 use crate::methods::SatelliteStatus;
 
 //keep this basically
