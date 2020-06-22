@@ -2,7 +2,6 @@
 use super::operators::*;
 use anyhop::{Atom, Method, Task, MethodResult, Goal};
 use crate::operators::SatelliteOperator::{SwitchOff, SwitchOn, TurnTo, Calibrate, TakeImage};
-use std::ptr::null;
 use anyhop::MethodResult::{TaskLists, PlanFound};
 use crate::methods::SatelliteMethod::{ScheduleOne, ScheduleAll};
 use anyhop::Task::Operator;
@@ -160,8 +159,8 @@ pub enum SatelliteStatus{
 
 
 impl SatelliteStatus{
-    pub fn new(identifier: u32, state: SatelliteState, satellite:SatelliteEnum, instrument:SatelliteEnum, mode:SatelliteEnum, new_direction:SatelliteEnum, previous_direction:SatelliteEnum) -> SatelliteStatus{
-        if is_satellite_done(state){
+    pub fn new(identifier: u32, state: SatelliteState, satellite:SatelliteEnum, instrument:SatelliteEnum, mode:SatelliteEnum, new_direction:SatelliteEnum, previous_direction:SatelliteEnum, goal: SatelliteGoals) -> SatelliteStatus{
+        if is_satellite_done(state, &goal){
             return SatelliteStatus::Done
         }else{
             return SatelliteStatus::NotDone(identifier,satellite,instrument,mode,new_direction,previous_direction)
@@ -169,8 +168,19 @@ impl SatelliteStatus{
     }
 }
 
-fn is_satellite_done(satellite_state:SatelliteState) -> bool{
-    return false;
+pub fn is_satellite_done(state:SatelliteState, goal: &SatelliteGoals) -> bool{
+    let state_clone = state.clone();
+
+    for goal_image in goal.have_image.keys(){
+        if !state.have_image.contains_key(goal_image){
+            return false
+        }else{
+            if !(state.have_image.get(goal_image) == goal.have_image.get(goal_image)){
+                return false
+            }
+        }
+    }
+    return true;
 }
 
 fn switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
@@ -184,7 +194,7 @@ fn switching(state: &SatelliteState, satellite:SatelliteEnum, instrument: Satell
     }])
 }
 
-fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
+fn schedule_one(_state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     use SatelliteMethod::*; use MethodResult::*; use Task::*;
     TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),
                         Method(Switching(satellite, instrument)),
@@ -235,7 +245,7 @@ fn brute_force_instrument(state: &SatelliteState, mode:&SatelliteEnum)->Option<S
 fn brute_force_satellite(state: &SatelliteState, instrument: &SatelliteEnum, mode: &SatelliteEnum)->Option<SatelliteEnum>{
     for satellites in state.onboard.keys(){
         for instrument_vec in state.onboard.get(satellites){
-            for instrument in instrument_vec{
+            for _instrument_in_list in instrument_vec{
                 if state.supports_helper(instrument,mode){
                     return Some(satellites.clone())
                 }
