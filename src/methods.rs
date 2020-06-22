@@ -198,15 +198,15 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         if !(state.have_image.get(goal_image) == goal.have_image.get(goal_image)){
 
             let goal_image_clone = goal_image.clone();
-            let satellite = ?;
             let mode = goal.have_image.get(goal_image).unwrap();
             let instrument = brute_force_instrument(state, mode); //First look up the goal image to see which mode it should be in, and then look up which mode it should be in.
             let new_direction = goal_image_clone;
-            let previous_direction = ?;
 
-            //state, satellite, instrument, mode, new_direction, previous_direction
+            let satellite = brute_force_satellite(state,&instrument.unwrap(), mode).unwrap();
+            let previous_direction = state.pointing.get(&satellite.clone()).unwrap();
+
             // tasks.push(vec![Task::Method(ScheduleOne(goal_image_clone)),Task::Method(ScheduleAll)]);
-            tasks.push(vec![Task::Method(ScheduleOne(satellite,instrument,mode.clone(),new_direction,previous_direction)),Task::Method(ScheduleAll)]);
+            tasks.push(vec![Task::Method(ScheduleOne(satellite,instrument.unwrap(),mode.clone(),new_direction,previous_direction.clone())),Task::Method(ScheduleAll)]);
 
         }else{
             let image_clone = goal_image.clone();
@@ -221,14 +221,26 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
     }
 }
 
-fn brute_force_instrument(state: &SatelliteState, mode:&SatelliteEnum)->Optional<SatelliteEnum>{
-    for instrument in state.supports.values(){
-        if state.supports.get(instrument)==mode{
-            return Just(instrument.clone());
+fn brute_force_instrument(state: &SatelliteState, mode:&SatelliteEnum)->Option<SatelliteEnum>{
+    for instrument in state.supports.keys(){
+        if state.supports.get(instrument)==Some(mode){
+            return Some(instrument.clone());
         }
     }
     return None;
+}
 
+fn brute_force_satellite(state: &SatelliteState, instrument: &SatelliteEnum, mode: &SatelliteEnum)->Option<SatelliteEnum>{
+    for satellites in state.onboard.keys(){
+        for instrument_vec in state.onboard.get(satellites){
+            for instrument in instrument_vec{
+                if state.supports_helper(instrument,mode){
+                    return Some(satellites.clone())
+                }
+            }
+        }
+    }
+    return None;
 }
 
 impl Method for SatelliteMethod{

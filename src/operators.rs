@@ -341,7 +341,7 @@ impl SatelliteState {
             return false;
         }
     }
-    fn supports_helper(&mut self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool {
+    pub fn supports_helper(self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool {
         return match self.supports.get(&instrument) {
             Some(x) => x == mode, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.
