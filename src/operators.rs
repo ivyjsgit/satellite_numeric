@@ -6,6 +6,7 @@ use anyhop::{Atom, Operator};
 use strum_macros::*;
 
 use crate::methods::SatelliteStatus;
+use crate::methods::SatelliteStatus::{Done, NotDone};
 
 pub fn is_valid<B: Atom>(plan: &Vec<BlockOperator<B>>, start: &BlockState<B>, goal: &BlockGoals<B>) -> bool {
     let mut state = start.clone();
@@ -353,6 +354,9 @@ impl SatelliteState {
             Some(x) => *x,
             None => 0,
         };
+    }
+    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>) -> Self {
+        SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity: (BTreeMap::new()), total_data_stored: (0), satellite_data_stored: (BTreeMap::new()), satellite_fuel_capacity: (BTreeMap::new()), slew_time: (BTreeMap::new()), fuel_used: (0), fuel: (0), status: (Done) }
     }
 }
 

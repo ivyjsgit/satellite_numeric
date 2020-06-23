@@ -1,3 +1,5 @@
+//Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
+
 use anyhop::{Atom, Goal, Method, MethodResult, Task};
 use anyhop::MethodResult::{PlanFound, TaskLists};
 use anyhop::Task::Operator;
@@ -5,7 +7,6 @@ use anyhop::Task::Operator;
 use crate::methods::SatelliteMethod::{ScheduleAll, ScheduleOne};
 use crate::operators::SatelliteOperator::{Calibrate, SwitchOff, SwitchOn, TakeImage, TurnTo};
 
-//Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
 use super::operators::*;
 
 // pub fn is_done<B:Atom>(b1: B, state: &BlockState<B>, goal: &BlockGoals<B>) -> bool {

@@ -1,17 +1,9 @@
-// use sexpy::*;
-// use crate::operators::{BlockState, BlockGoals, SatelliteState};
-// use std::{io,fs};
-// use std::collections::HashMap;
-//
+use sexpy::*;
+use crate::operators::{BlockState, BlockGoals, SatelliteState, SatelliteGoals, SatelliteEnum};
+use std::{io,fs};
+use std::collections::{HashMap, BTreeMap};
+
 // pub fn make_block_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
-//     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
-//     match Define::parse(contents.as_str()) {
-//         Ok(parsed) => Ok(parsed.init_and_goal()),
-//         Err(e) => {println!("{}", e); Err(err!(Other, "oops"))}
-//     }
-// }
-//
-// pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
 //     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
 //     match Define::parse(contents.as_str()) {
 //         Ok(parsed) => Ok(parsed.init_and_goal()),
@@ -53,46 +45,6 @@
 //     }
 // }
 //
-// /*
-//
-// impl Define {
-//     pub fn init_and_goal(&self) -> SatelliteState {
-//         let mut objects = HashMap::new();
-//         for object in self.objects.objs.iter() {
-//             objects.insert(String::from(object), objects.len());
-//         }
-//         let mut onboard = Vec::new();
-//         let mut supports = Vec::new();
-//         let mut pointing =  Vec::new();
-//         let mut power_avail = Vec::new();
-//         let mut power_on =  Vec::new();
-//         let mut calibrated =  Vec::new();
-//         let mut have_image = Vec::new();
-//         let mut calibration_target =  Vec::new();
-//
-//         for pred in self.init.predicates.iter() {
-//             if pred.predicate_type == "supports" {
-//                 supports.push(decode_on(&pred, &objects));
-//                 // table.push(*objects.get(pred.predicate_args[0].as_str()).unwrap());
-//             } else if pred.predicate_type == "on" {
-//                 // stacks.push(decode_on(&pred, &objects));
-//             }
-//         }
-//
-//
-//         // let mut goals = Vec::new();
-//         // for goal in self.goal.and.goals.iter() {
-//         //     goals.push(decode_on(&goal, &objects));
-//         // }
-//
-//         SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target)
-//
-//         // (BlockState::from(table, stacks), BlockGoals::new(goals))
-//     }
-// }
-//
-//
-// */
 //
 // fn decode_on(p: &Predicate, objects: &HashMap<String,usize>) -> (usize, usize) {
 //     let top = obj_get(p, objects, 0);
@@ -144,3 +96,130 @@
 // struct And {
 //     goals: Vec<Predicate>
 // }
+
+/*
+
+SATELLITE STUFF
+
+ */
+
+
+// pub fn make_block_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
+//     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
+//     match Define::parse(contents.as_str()) {
+//         Ok(parsed) => Ok(parsed.init_and_goal()),
+//         Err(e) => {println!("{}", e); Err(err!(Other, "oops"))}
+//     }
+// }
+
+pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteState,SatelliteGoals)>{
+    let contents = fs::read_to_string(pddl_file)?.to_lowercase();
+    match Define::parse(contents.as_str()) {
+        Ok(parsed) => Ok(parsed.init_and_goal()),
+        Err(e) => {println!("{}", e); Err(err!(Other, "oops"))}
+    }
+}
+
+#[derive(Sexpy)]
+struct Define {
+    problem: Problem,
+    domain: Domain,
+    objects: Objects,
+    init: Init,
+    goal: Goal
+}
+
+impl Define{
+    pub fn init_and_goal(&self)->(SatelliteState,SatelliteGoals){
+        let mut objects = HashMap::new();
+        for object in self.objects.objs.iter() {
+            objects.insert(String::from(object), objects.len());
+        }
+
+        //The predicates we have are as follows:
+        let mut onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>= BTreeMap::new();
+        let mut supports: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
+        let mut pointing: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
+        let mut power_avail = false;
+        let mut power_on: Vec<SatelliteEnum> = vec![];
+        let mut calibrated: Vec<SatelliteEnum> = vec![];
+        let mut have_image: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+        let mut calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum> =  BTreeMap::new();
+
+        let mut goals_images: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+        let mut goal_fuel_used: u32 = 0;
+
+
+
+        for pred in self.init.predicates.iter(){
+            if pred.predicate_type == "onboard".parse().unwrap() {
+                onboard.insert(SatelliteEnum::from(pred), pred.len());
+            }else if pred.predicate_type == "supports".parse().unwrap() {
+                supports.insert(SatelliteEnum::from(pred), pred.len());
+            }else if pred.predicate_type== "pointing".parse().unwrap() {
+                pointing.insert(SatelliteEnum::from(pred), pred.len());
+            }else if pred.predicate_type == "power_avail".parse().unwrap() {
+                power_avail = true;
+            } else if pred.predicate_type == "power_on".parse().unwrap() {
+                power_on.push(SatelliteEnum::from(pred));
+            }else if pred.predicate_type == "calibrated".parse().unwrap() {
+                calibrated.push(SatelliteEnum::from(pred));
+            }else if pred.predicate_type == "have_image".parse().unwrap() {
+                have_image.insert(SatelliteEnum::from(pred), pred.len());
+            }else if pred.predicate_type == "calibration_target".parse().unwrap() {
+                calibration_target.insert(SatelliteEnum::from(pred), pred.len());
+            }
+        }
+
+
+        (SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target), SatelliteGoals::new(goals_images,  goal_fuel_used));
+    }
+}
+
+#[derive(Sexpy)]
+struct Problem {
+    name: String
+}
+
+#[derive(Sexpy)]
+#[sexpy(head=":domain")]
+struct Domain {
+    name: String
+}
+
+#[derive(Sexpy)]
+#[sexpy(head=":objects")]
+struct Objects {
+    objs: Vec<String>
+}
+
+#[derive(Sexpy)]
+#[sexpy(head=":init")]
+struct Init {
+    predicates: Vec<Predicate>
+}
+
+#[derive(Sexpy)]
+#[sexpy(nohead)]
+struct Predicate {
+    predicate_type: String,
+    predicate_args: Vec<String>
+}
+
+// #[derive(Sexpy)]
+// #[sexpy(nohead)]
+// struct NestedPredicate {
+//     predicate_type: String,
+//     predicate_args: Vec<String>
+// }
+
+#[derive(Sexpy)]
+#[sexpy(head=":goal")]
+struct Goal {
+    and: And
+}
+
+#[derive(Sexpy)]
+struct And {
+    goals: Vec<Predicate>
+}
