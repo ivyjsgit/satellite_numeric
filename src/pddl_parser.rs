@@ -129,6 +129,12 @@ struct Define {
     goal: Goal
 }
 
+fn decode_on(p: &Predicate, objects: &HashMap<String,usize>) -> (usize, usize) {
+    let top = obj_get(p, objects, 0);
+    let bottom = obj_get(p, objects, 1);
+    (top, bottom)
+}
+
 impl Define{
     pub fn init_and_goal(&self)->(SatelliteState,SatelliteGoals){
         let mut objects = HashMap::new();
@@ -153,7 +159,7 @@ impl Define{
 
         for pred in self.init.predicates.iter(){
             if pred.predicate_type == "onboard".parse().unwrap() {
-                onboard.insert(SatelliteEnum::from(pred), pred.len());
+                onboard.insert(SatelliteEnum::from(decode_on(pred, &objects)), pred.len());
             }else if pred.predicate_type == "supports".parse().unwrap() {
                 supports.insert(SatelliteEnum::from(pred), pred.len());
             }else if pred.predicate_type== "pointing".parse().unwrap() {
@@ -203,15 +209,16 @@ struct Init {
 #[sexpy(nohead)]
 struct Predicate {
     predicate_type: String,
-    predicate_args: Vec<String>
+    predicate_args: Vec<String>,
+    nested_predicate: Vec<NestedPredicate>
 }
 
-// #[derive(Sexpy)]
-// #[sexpy(nohead)]
-// struct NestedPredicate {
-//     predicate_type: String,
-//     predicate_args: Vec<String>
-// }
+#[derive(Sexpy)]
+#[sexpy(heaed ="=")]
+struct NestedPredicate {
+    predicate_type: String,
+    predicate_args: Vec<String>
+}
 
 #[derive(Sexpy)]
 #[sexpy(head=":goal")]
