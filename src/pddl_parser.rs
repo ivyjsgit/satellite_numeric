@@ -242,7 +242,7 @@ struct And {
     goals: Vec<Predicate>
 }
 
-pub struct SatelliteAsString{
+pub struct SatelliteToU32 {
     pub onboard: BTreeMap<String, u32>,
     pub supports: BTreeMap<String, u32>,
     pub pointing: BTreeMap<String, u32>,
@@ -251,18 +251,8 @@ pub struct SatelliteAsString{
     pub have_image: BTreeMap<String, u32>,
     pub calibration_target: BTreeMap<String, u32>,
 }
-impl SatelliteAsString{
-    /*
-    fn decode_on(p: &Predicate, objects: &HashMap<String,usize>) -> (usize, usize) {
-    let top = obj_get(p, objects, 0);
-    let bottom = obj_get(p, objects, 1);
-    (top, bottom)
-}
-fn obj_get(p: &Predicate, objects: &HashMap<String,usize>, i: usize) -> usize {
+impl SatelliteToU32 {
 
-    *objects.get(p.predicate_args[i].as_str()).unwrap()
-}
-     */
     pub fn decode(self,p: &Predicate, objects: &HashMap<String, usize>, name: String) -> u32{
         match self.obj_get(p,objects, name) {
             Some(n) => n,
