@@ -2,6 +2,7 @@ use sexpy::*;
 use crate::operators::{BlockState, BlockGoals, SatelliteState, SatelliteGoals, SatelliteEnum};
 use std::{io,fs};
 use std::collections::{HashMap, BTreeMap};
+use crate::operators::SatelliteEnum::{Satellite, Mode, Instrument};
 
 // pub fn make_block_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
 //     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
@@ -142,56 +143,56 @@ fn obj_get(p: &Predicate, objects: &HashMap<String,usize>, i: usize) -> usize {
 // struct
 
 
-// impl Define{
-//     pub fn init_and_goal(&self)->(SatelliteState,SatelliteGoals){
-//
-//
-//
-//         let mut objects = HashMap::new();
-//         for object in self.objects.objs.iter() {
-//             objects.insert(String::from(object), objects.len());
-//         }
-//
-//         //The predicates we have are as follows:
-//         let mut onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>= BTreeMap::new();
-//         let mut supports: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
-//         let mut pointing: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
-//         let mut power_avail = false;
-//         let mut power_on: Vec<SatelliteEnum> = vec![];
-//         let mut calibrated: Vec<SatelliteEnum> = vec![];
-//         let mut have_image: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
-//         let mut calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum> =  BTreeMap::new();
-//
-//         let mut goals_images: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
-//         let mut goal_fuel_used: u32 = 0;
-//
-//
-//
-//
-//         for pred in self.init.predicates.iter(){
-//             if pred.predicate_type == "onboard".parse().unwrap() {
-//                 onboard.insert(SatelliteEnum::from(decode_on(pred, &objects)), pred.len());
-//             }else if pred.predicate_type == "supports".parse().unwrap() {
-//                 supports.insert(SatelliteEnum::from(pred), pred.len());
-//             }else if pred.predicate_type== "pointing".parse().unwrap() {
-//                 pointing.insert(SatelliteEnum::from(pred), pred.len());
-//             }else if pred.predicate_type == "power_avail".parse().unwrap() {
-//                 power_avail = true;
-//             } else if pred.predicate_type == "power_on".parse().unwrap() {
-//                 power_on.push(SatelliteEnum::from(pred));
-//             }else if pred.predicate_type == "calibrated".parse().unwrap() {
-//                 calibrated.push(SatelliteEnum::from(pred));
-//             }else if pred.predicate_type == "have_image".parse().unwrap() {
-//                 have_image.insert(SatelliteEnum::from(pred), pred.len());
-//             }else if pred.predicate_type == "calibration_target".parse().unwrap() {
-//                 calibration_target.insert(SatelliteEnum::from(pred), pred.len());
-//             }
-//         }
-//
-//
-//         (SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target), SatelliteGoals::new(goals_images,  goal_fuel_used));
-//     }
-// }
+impl Define{
+    pub fn init_and_goal(&self)->(SatelliteState,SatelliteGoals){
+
+        let mut objects = HashMap::new();
+        for object in self.objects.objs.iter() {
+            objects.insert(String::from(object), objects.len());
+        }
+
+        //The predicates we have are as follows:
+
+        let mut onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>= BTreeMap::new();
+        let mut supports: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
+        let mut pointing: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
+        let mut power_avail = false;
+        let mut power_on: Vec<SatelliteEnum> = vec![];
+        let mut calibrated: Vec<SatelliteEnum> = vec![];
+        let mut have_image: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+        let mut calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum> =  BTreeMap::new();
+
+        let mut goals_images: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+        let mut goal_fuel_used: u32 = 0;
+
+        let mut u32Holder = SatelliteToU32::new(BTreeMap::new(), BTreeMap::new(),BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new());
+
+
+        for pred in self.init.predicates.iter(){
+            if pred.predicate_type == "onboard".parse().unwrap() {
+                println!("hello!");
+                // onboard.insert(Satellite(u32Holder.decode(pred, &objects, "onboard".parse().unwrap())), pred.predicate_type.len());
+            }else if pred.predicate_type == "supports".parse().unwrap() {
+                supports.insert(Instrument(u32Holder.decode(pred, &objects, "supports".parse().unwrap())), Mode(pred.predicate_type.len() as u32));
+            }
+            // }else if pred.predicate_type== "pointing".parse().unwrap() {
+            //     pointing.insert(SatelliteEnum(u32Holder.decode(pred, &objects, "pointing".parse().unwrap())), pred.len());
+            // }else if pred.predicate_type == "power_avail".parse().unwrap() {
+            //     power_avail = true;
+            // } else if pred.predicate_type == "power_on".parse().unwrap() {
+            //     power_on.insert(SatelliteEnum(u32Holder.decode(pred, &objects, "power_on".parse().unwrap())), pred.len());
+            // }else if pred.predicate_type == "calibrated".parse().unwrap() {
+            //     calibrated.insert(SatelliteEnum(u32Holder.decode(pred, &objects, "calibrated".parse().unwrap())), pred.len());
+            // }else if pred.predicate_type == "have_image".parse().unwrap() {
+            //     have_image.insert(SatelliteEnum(u32Holder.decode(pred, &objects, "have_image".parse().unwrap())), pred.len());
+            // }else if pred.predicate_type == "calibration_target".parse().unwrap() {
+            //     calibration_target.insert(SatelliteEnum(u32Holder.decode(pred, &objects, "calibration_target".parse().unwrap())), pred.len());
+            // }
+        }
+
+        return (SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target), SatelliteGoals::new(goals_images,  goal_fuel_used));
+    }
+}
 
 #[derive(Sexpy)]
 struct Problem {
@@ -242,7 +243,7 @@ struct And {
     goals: Vec<Predicate>
 }
 
-pub struct SatelliteToU32 {
+pub struct SatelliteToU32{
     pub onboard: BTreeMap<String, u32>,
     pub supports: BTreeMap<String, u32>,
     pub pointing: BTreeMap<String, u32>,
@@ -251,14 +252,20 @@ pub struct SatelliteToU32 {
     pub have_image: BTreeMap<String, u32>,
     pub calibration_target: BTreeMap<String, u32>,
 }
-impl SatelliteToU32 {
 
+impl SatelliteToU32 {
+    pub fn new(onboard: BTreeMap<String, u32>, supports: BTreeMap<String, u32>, pointing: BTreeMap<String, u32>, power_on: BTreeMap<String, u32>, calibrated: BTreeMap<String, u32>, have_image: BTreeMap<String, u32>, calibration_target: BTreeMap<String, u32>) -> Self {
+        SatelliteToU32 { onboard, supports, pointing, power_on, calibrated, have_image, calibration_target }
+    }
+}
+
+impl SatelliteToU32 {
     pub fn decode(self,p: &Predicate, objects: &HashMap<String, usize>, name: String) -> u32{
         match self.obj_get(p,objects, name) {
             Some(n) => n,
             None => 0
-            }
         }
+    }
     pub fn obj_get(self, p: &Predicate, objects: &HashMap<String, usize>, name: String) -> Option<u32> {
         match name.as_str(){
             "onboard" => Some(*self.onboard.get(p.predicate_args[0].as_str())?),
