@@ -106,11 +106,21 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
 }
 
 fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum) -> Option<SatelliteEnum> {
-    for instrument in state.supports.keys() {
-        if state.supports.get(instrument) == Some(mode) {
+    for instrument in state.supports.keys(){
+        // let vec_of_modes = state.supports.get(instrument)?;
+        if state.supports.get(instrument)?.contains(mode){
             return Some(instrument.clone());
         }
     }
+
+    // for instrument_vec in state.supports.values(){
+    //     for instrument in instrument_vec {
+    //         let array_for
+    //         if state.supports.get(instrument).contains(mode){
+    //             return Some(instrument.clone());
+    //         }
+    //     }
+    // }
     return None;
 }
 

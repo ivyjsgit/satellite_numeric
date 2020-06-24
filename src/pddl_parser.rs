@@ -154,7 +154,7 @@ impl Define{
         //The predicates we have are as follows:
 
         let mut onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>= BTreeMap::new();
-        let mut supports: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
+        let mut supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>> =BTreeMap::new();
         let mut pointing: BTreeMap<SatelliteEnum, SatelliteEnum> =BTreeMap::new();
         let mut power_avail = false;
         let mut power_on: Vec<SatelliteEnum> = vec![];
@@ -166,15 +166,15 @@ impl Define{
         let mut goal_fuel_used: u32 = 0;
 
 
-        let mut u32Holder = SatelliteToU32::new(BTreeMap::new(), BTreeMap::new(),BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new());
+        let mut u_32_holder = SatelliteToU32::new(BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new());
 
         for pred in self.init.predicates.iter(){
-            if pred.predicate_type == "onboard".parse().unwrap() {
-                println!("hello!");
-                // onboard.insert(Satellite(u32Holder.decode(pred, &objects, "onboard".parse().unwrap())), pred.predicate_type.len());
-            }else if pred.predicate_type == "supports".parse().unwrap() {
-                supports.insert(Instrument(u32Holder.decode(pred, &objects, "supports".parse().unwrap())), Mode(pred.predicate_type.len() as u32));
-            }
+            // if pred.predicate_type == "onboard" {
+            //     println!("hello!");
+            //     // onboard.insert(Satellite(u32Holder.decode(pred, &objects, "onboard".parse().unwrap())), pred.predicate_type.len());
+            // }else if pred.predicate_type == "supports" {
+            //     supports.insert(Instrument(u32Holder.decode(pred, &objects, "supports".parse().unwrap())), Mode(pred.predicate_type.len() as u32));
+            // }
 
             // }else if pred.predicate_type== "pointing".parse().unwrap() {
 

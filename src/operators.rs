@@ -188,8 +188,8 @@ pub enum SatelliteEnum {
 pub struct SatelliteState {
     //map satellite -> vec<instrument>
     pub onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>,
-    //instrument -> mode
-    pub supports: BTreeMap<SatelliteEnum, SatelliteEnum>,
+    //instrument -> vec<modes>
+    pub supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>,
     //map satellite -> direction
     pub pointing: BTreeMap<SatelliteEnum, SatelliteEnum>,
     pub power_avail: bool,
@@ -345,7 +345,7 @@ impl SatelliteState {
     }
     pub fn supports_helper(&self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool {
         return match self.supports.get(&instrument) {
-            Some(x) => x == mode, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+            Some(x) => x.contains(mode), //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.
         };
     }
@@ -355,7 +355,7 @@ impl SatelliteState {
             None => 0,
         };
     }
-    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>) -> Self {
+    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>) -> Self {
         SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity: (BTreeMap::new()), total_data_stored: (0), satellite_data_stored: (BTreeMap::new()), satellite_fuel_capacity: (BTreeMap::new()), slew_time: (BTreeMap::new()), fuel_used: (0), fuel: (0), status: (Done) }
     }
 }
