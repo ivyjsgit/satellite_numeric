@@ -169,9 +169,9 @@ impl Define{
         let mut u_32_holder = SatelliteToU32::new(BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new());
 
         for pred in self.init.predicates.iter(){
-            // if pred.predicate_type == "onboard" {
+            // if pred.predicate_type == "on_board" {
             //     println!("hello!");
-            //     // onboard.insert(Satellite(u32Holder.decode(pred, &objects, "onboard".parse().unwrap())), pred.predicate_type.len());
+            //     // onboard.insert(Satellite(u32Holder.decode(pred, &objects, "on_board".parse().unwrap())), pred.predicate_type.len());
             // }else if pred.predicate_type == "supports" {
             //     supports.insert(Instrument(u32Holder.decode(pred, &objects, "supports".parse().unwrap())), Mode(pred.predicate_type.len() as u32));
             // }
@@ -271,7 +271,7 @@ impl SatelliteToU32 {
     }
     pub fn obj_get(self, p: &Predicate, objects: &HashMap<String, usize>, name: String) -> Option<u32> {
         match name.as_str(){
-            "onboard" => Some(*self.onboard.get(p.predicate_args[0].as_str())?),
+            "on_board" => Some(*self.onboard.get(p.predicate_args[0].as_str())?),
             "supports" => Some(*self.supports.get(p.predicate_args[0].as_str())?),
             "pointing" => Some(*self.pointing.get(p.predicate_args[0].as_str())?),
             "power_on" => Some(*self.supports.get(p.predicate_args[0].as_str())?),

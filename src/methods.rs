@@ -105,33 +105,19 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
     };
 }
 
-fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum) -> Option<SatelliteEnum> {
+fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum)  -> Option<SatelliteEnum> {
     for instrument in state.supports.keys(){
-        // let vec_of_modes = state.supports.get(instrument)?;
         if state.supports.get(instrument)?.contains(mode){
             return Some(instrument.clone());
         }
     }
-
-    // for instrument_vec in state.supports.values(){
-    //     for instrument in instrument_vec {
-    //         let array_for
-    //         if state.supports.get(instrument).contains(mode){
-    //             return Some(instrument.clone());
-    //         }
-    //     }
-    // }
     return None;
 }
 
 fn brute_force_satellite(state: &SatelliteState, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> Option<SatelliteEnum> {
     for satellites in state.onboard.keys() {
-        for instrument_vec in state.onboard.get(satellites) {
-            for _instrument_in_list in instrument_vec {
-                if state.supports_helper(instrument, mode) {
-                    return Some(satellites.clone());
-                }
-            }
+        if state.supports_helper(instrument,mode){
+            return Some(satellites.clone());
         }
     }
     return None;
