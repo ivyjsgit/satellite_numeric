@@ -3,6 +3,9 @@ use crate::operators::{BlockState, BlockGoals, SatelliteState, SatelliteGoals, S
 use std::{io,fs};
 use std::collections::{HashMap, BTreeMap};
 use crate::operators::SatelliteEnum::{Satellite, Mode, Instrument};
+use std::process::exit;
+use std::rc::{self, Rc};
+
 
 // pub fn make_block_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
 //     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
@@ -169,12 +172,18 @@ impl Define{
         let mut u_32_holder = SatelliteToU32::new(BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new());
 
         for pred in self.init.predicates.iter(){
-            // if pred.predicate_type == "on_board" {
-            //     println!("hello!");
-            //     // onboard.insert(Satellite(u32Holder.decode(pred, &objects, "on_board".parse().unwrap())), pred.predicate_type.len());
-            // }else if pred.predicate_type == "supports" {
-            //     supports.insert(Instrument(u32Holder.decode(pred, &objects, "supports".parse().unwrap())), Mode(pred.predicate_type.len() as u32));
-            // }
+            if pred.predicate_type == "on_board" {
+                println!("hello!");
+                // onboard.insert(Satellite(u32Holder.decode(pred, &objects, "on_board".parse().unwrap())), pred.predicate_type.len());
+            }else if pred.predicate_type == "supports" {
+                let instrument_enum = Instrument(u_32_holder.decode(pred, &objects, "supports".parse().unwrap()));
+                let ignore_numbers = |n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
+                let existing_values = match supports.get_mut(&instrument_enum) {
+                    Some(x) =>x.push(Mode(pred.predicate_type.len() as u32)),
+                    None => ignore_numbers(supports.insert(instrument_enum, vec![Mode(pred.predicate_type.len() as u32)]))
+                };
+
+            }
 
             // }else if pred.predicate_type== "pointing".parse().unwrap() {
 

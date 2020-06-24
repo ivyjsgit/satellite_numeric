@@ -325,7 +325,7 @@ impl SatelliteState {
         let satellite_capacity = *(self.data_capacity.get(satellite).unwrap());
         if self.calibrated.contains(instrument) &&
             self.onboard.get(satellite).unwrap().contains(instrument) &&
-            self.supports_helper(instrument, mode) &&
+            self.does_instrument_support_mode(instrument, mode) &&
             self.power_on.contains(instrument) &&
             self.pointing_helper(satellite, &direction) &&
             satellite_capacity >= self.get_satellite_data_used(&satellite) {
@@ -343,7 +343,7 @@ impl SatelliteState {
             return false;
         }
     }
-    pub fn supports_helper(&self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool {
+    pub fn does_instrument_support_mode(&self, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> bool {
         return match self.supports.get(&instrument) {
             Some(x) => x.contains(mode), //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.

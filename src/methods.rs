@@ -116,7 +116,7 @@ fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum)  -> Opti
 
 fn brute_force_satellite(state: &SatelliteState, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> Option<SatelliteEnum> {
     for satellites in state.onboard.keys() {
-        if state.supports_helper(instrument,mode){
+        if state.does_instrument_support_mode(instrument, mode){
             return Some(satellites.clone());
         }
     }
@@ -146,3 +146,4 @@ impl Goal for SatelliteGoals {
         vec![Task::Method(SatelliteMethod::ScheduleAll)]
     }
 }
+
