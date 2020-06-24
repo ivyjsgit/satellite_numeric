@@ -165,8 +165,8 @@ impl Define{
         let mut goals_images: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
         let mut goal_fuel_used: u32 = 0;
 
-        let mut u32Holder = SatelliteToU32::new(BTreeMap::new(), BTreeMap::new(),BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new());
 
+        let mut u32Holder = SatelliteToU32::new(BTreeMap::new(), BTreeMap::new(),BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new(), BTreeMap::new());
 
         for pred in self.init.predicates.iter(){
             if pred.predicate_type == "onboard".parse().unwrap() {
@@ -175,7 +175,9 @@ impl Define{
             }else if pred.predicate_type == "supports".parse().unwrap() {
                 supports.insert(Instrument(u32Holder.decode(pred, &objects, "supports".parse().unwrap())), Mode(pred.predicate_type.len() as u32));
             }
+
             // }else if pred.predicate_type== "pointing".parse().unwrap() {
+
             //     pointing.insert(SatelliteEnum(u32Holder.decode(pred, &objects, "pointing".parse().unwrap())), pred.len());
             // }else if pred.predicate_type == "power_avail".parse().unwrap() {
             //     power_avail = true;
@@ -189,6 +191,7 @@ impl Define{
             //     calibration_target.insert(SatelliteEnum(u32Holder.decode(pred, &objects, "calibration_target".parse().unwrap())), pred.len());
             // }
         }
+
 
         return (SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target), SatelliteGoals::new(goals_images,  goal_fuel_used));
     }
