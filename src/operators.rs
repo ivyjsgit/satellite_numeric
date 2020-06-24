@@ -178,10 +178,10 @@ impl<B: Atom> Operator for BlockOperator<B> {
 pub enum SatelliteEnum {
     //We will have to have a lookup table that goes from usize -> String for these.
     //This is just here because you can't have the copy attribute because Strings aren't copyable.
-    Instrument(usize),
-    Satellite(usize),
-    Mode(usize),
-    Direction(usize),
+    Instrument(u32),
+    Satellite(u32),
+    Mode(u32),
+    Direction(u32),
 }
 
 #[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
