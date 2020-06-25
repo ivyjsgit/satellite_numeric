@@ -195,8 +195,11 @@ pub struct SatelliteState {
     pub power_avail: bool,
     //instrument
     pub power_on: Vec<SatelliteEnum>,
+    //instrument
     pub calibrated: Vec<SatelliteEnum>,
+    //direction -> mode
     pub have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
+    //instrument -> direction
     pub calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>,
     //map satelite -> u32
     pub data_capacity: BTreeMap<SatelliteEnum, u32>,

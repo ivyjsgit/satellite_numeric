@@ -1,5 +1,8 @@
 #![feature(option_result_contains)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 #[macro_use]
+
 extern crate io_error;
 extern crate strum;
 extern crate strum_macros;

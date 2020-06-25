@@ -1,11 +1,15 @@
-use sexpy::*;
-use crate::operators::{BlockState, BlockGoals, SatelliteState, SatelliteGoals, SatelliteEnum};
-use std::{io,fs};
-use std::collections::{HashMap, BTreeMap};
-use crate::operators::SatelliteEnum::{Satellite, Mode, Instrument, Direction};
+use std::{fs, io};
+use std::collections::{BTreeMap, HashMap};
 use std::process::exit;
 use std::rc::{self, Rc};
 
+//This is because the parsing library actually uses the fields.
+#[allow(dead_code)]
+
+use sexpy::*;
+
+use crate::operators::{BlockGoals, BlockState, SatelliteEnum, SatelliteGoals, SatelliteState};
+use crate::operators::SatelliteEnum::{Direction, Instrument, Mode, Satellite};
 
 // pub fn make_block_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
 //     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
@@ -172,10 +176,11 @@ impl Define{
         for pred in self.init.predicates.iter(){
             //Satellite -> Vec<Instrument>
             if pred.predicate_type == "on_board" {
-                Define::map_onboard_to_numbers(&mut objects, &mut onboard, &mut supports, &mut u_32_holder, pred);
+                Define::map_onboard_to_numbers(&mut objects, &mut onboard, &mut u_32_holder, pred);
             }else if pred.predicate_type == "supports" {
                 Define::map_supports_to_numbers(&mut objects, &mut supports, &mut u_32_holder, pred);
             }else if pred.predicate_type== "pointing" {
+                //Because this is a Vec and not a BTreeMap, we have to handle it differently.
                 pointing.insert(Satellite(u_32_holder.decode(pred, &objects, "pointing".parse().unwrap())), Direction(pred.predicate_type.len() as u32));
             }else if pred.predicate_type == "power_avail" {
                 power_avail = true;
@@ -195,8 +200,8 @@ impl Define{
     }
 
     fn map_calibration_target_to_numbers(objects: &mut HashMap<String, usize>, mut calibration_target: &mut BTreeMap<SatelliteEnum, SatelliteEnum>, u_32_holder: &mut SatelliteToU32, pred: &&Predicate) {
-        let satellite_enum = Instrument(u_32_holder.decode(pred, &objects, "have_image".parse().unwrap()));
-        let ignore_numbers = |n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
+        let satellite_enum = Instrument(u_32_holder.decode(pred, &objects, "calibration_target".parse().unwrap()));
+        let ignore_numbers = |_n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
         match calibration_target.get(&satellite_enum) {
             Some(x) => vec![x].push(&(Direction(pred.predicate_type.len() as u32))),
             None => ignore_numbers(calibration_target.insert(satellite_enum, Direction(pred.predicate_type.len() as u32)))
@@ -205,7 +210,7 @@ impl Define{
 
     fn map_have_image_to_numbers(objects: &mut HashMap<String, usize>, mut have_image: &mut BTreeMap<SatelliteEnum, SatelliteEnum>, u_32_holder: &mut SatelliteToU32, pred: &Predicate) {
         let satellite_enum = Direction(u_32_holder.decode(pred, &objects, "have_image".parse().unwrap()));
-        let ignore_numbers = |n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
+        let ignore_numbers = |_n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
         match have_image.get(&satellite_enum) {
             Some(x) => vec![x].push(&(Mode(pred.predicate_type.len() as u32))),
             None => ignore_numbers(have_image.insert(satellite_enum, Mode(pred.predicate_type.len() as u32)))
@@ -214,17 +219,17 @@ impl Define{
 
     fn map_supports_to_numbers(objects: &mut HashMap<String, usize>, supports: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, u_32_holder: &mut SatelliteToU32, pred: &Predicate) {
         let instrument_enum = Instrument(u_32_holder.decode(pred, &objects, "supports".parse().unwrap()));
-        let ignore_numbers = |n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
+        let ignore_numbers = |_n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
         match supports.get_mut(&instrument_enum) {
             Some(x) => x.push(Mode(pred.predicate_type.len() as u32)),
             None => ignore_numbers(supports.insert(instrument_enum, vec![Mode(pred.predicate_type.len() as u32)]))
         };
     }
 
-    fn map_onboard_to_numbers(objects: &mut HashMap<String, usize>, onboard: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, u_32_holder: &mut SatelliteToU32, pred: &Predicate) {
+    fn map_onboard_to_numbers(objects: &mut HashMap<String, usize>, onboard: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, u_32_holder: &mut SatelliteToU32, pred: &Predicate) {
         let satellite_enum = Satellite(u_32_holder.decode(pred, &objects, "on_board".parse().unwrap()));
-        let ignore_numbers = |n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
-        match supports.get_mut(&satellite_enum) {
+        let ignore_numbers = |_n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
+        match onboard.get_mut(&satellite_enum) {
             Some(x) => x.push(Instrument(pred.predicate_type.len() as u32)),
             None => ignore_numbers(onboard.insert(satellite_enum, vec![Instrument(pred.predicate_type.len() as u32)]))
         };
