@@ -1,5 +1,3 @@
-//Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
-
 use anyhop::{Atom, Goal, Method, MethodResult, Task};
 use anyhop::MethodResult::{PlanFound, TaskLists};
 use anyhop::Task::Operator;
@@ -8,12 +6,6 @@ use crate::methods::SatelliteMethod::{ScheduleAll, ScheduleOne};
 use crate::operators::SatelliteOperator::{Calibrate, SwitchOff, SwitchOn, TakeImage, TurnTo};
 
 use super::operators::*;
-
-/*
-
-Satellite Stuff
-
- */
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub enum SatelliteMethod {

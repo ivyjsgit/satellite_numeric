@@ -1,5 +1,3 @@
-//Most of this code is temporarily copied from Dr. Ferrer's Block-World Code until I can get the project up and running
-
 use std::collections::{BTreeMap, BTreeSet};
 
 use anyhop::{Atom, Operator};

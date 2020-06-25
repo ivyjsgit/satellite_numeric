@@ -4,7 +4,6 @@ use std::process::exit;
 use std::rc::{self, Rc};
 
 //This is because the parsing library actually uses the fields.
-#[allow(dead_code)]
 
 use sexpy::*;
 
@@ -111,22 +110,13 @@ SATELLITE STUFF
 
  */
 
-
-// pub fn make_block_problem_from(pddl_file: &str) -> io::Result<(BlockState<usize>, BlockGoals<usize>)> {
-//     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
-//     match Define::parse(contents.as_str()) {
-//         Ok(parsed) => Ok(parsed.init_and_goal()),
-//         Err(e) => {println!("{}", e); Err(err!(Other, "oops"))}
-//     }
-// }
-
-// pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteState,SatelliteGoals)>{
-//     let contents = fs::read_to_string(pddl_file)?.to_lowercase();
-//     match Define::parse(contents.as_str()) {
-//         Ok(parsed) => Ok(parsed.init_and_goal()),
-//         Err(e) => {println!("{}", e); Err(err!(Other, "oops"))}
-//     }
-// }
+pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteState,SatelliteGoals)>{
+    let contents = fs::read_to_string(pddl_file)?.to_lowercase();
+    match Define::parse(contents.as_str()) {
+        Ok(parsed) => Ok(parsed.init_and_goal()),
+        Err(e) => {println!("{}", e); Err(err!(Other, "oops"))}
+    }
+}
 
 #[derive(Sexpy)]
 struct Define {
