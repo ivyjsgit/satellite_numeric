@@ -176,7 +176,7 @@ impl Define{
             if pred.predicate_type == "on_board" {
                 Define::map_onboard_to_numbers(&mut objects, &mut onboard, &mut supports, &mut u_32_holder, pred);
             }else if pred.predicate_type == "supports" {
-                Define::map_supports_to_numbers(&mut objects, &mut supports, u_32_holder, pred);
+                Define::map_supports_to_numbers(&mut objects, &mut supports, &mut u_32_holder, pred);
             }
 
             // }else if pred.predicate_type== "pointing".parse().unwrap() {
@@ -199,7 +199,7 @@ impl Define{
         return (SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target), SatelliteGoals::new(goals_images,  goal_fuel_used));
     }
 
-    fn map_supports_to_numbers(objects: &mut HashMap<String, usize>, mut supports: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, mut u_32_holder: SatelliteToU32, pred: &Predicate) {
+    fn map_supports_to_numbers(objects: &mut HashMap<String, usize>, supports: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, u_32_holder: &mut SatelliteToU32, pred: &Predicate) {
         let instrument_enum = Instrument(u_32_holder.decode(pred, &objects, "supports".parse().unwrap()));
         let ignore_numbers = |n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
         match supports.get_mut(&instrument_enum) {
@@ -208,7 +208,7 @@ impl Define{
         };
     }
 
-    fn map_onboard_to_numbers(objects: &mut HashMap<String, usize>, mut onboard: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, mut u_32_holder: &mut SatelliteToU32, pred: &Predicate) {
+    fn map_onboard_to_numbers(objects: &mut HashMap<String, usize>, onboard: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: &mut BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, u_32_holder: &mut SatelliteToU32, pred: &Predicate) {
         let satellite_enum = Satellite(u_32_holder.decode(pred, &objects, "on_board".parse().unwrap()));
         let ignore_numbers = |n| (); //This is used because insert returns something, and we want to ignore it since this needs to return ()
         match supports.get_mut(&satellite_enum) {
