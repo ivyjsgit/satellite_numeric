@@ -26,10 +26,10 @@ pub enum SatelliteStatus {
 
 impl SatelliteStatus {
     pub fn new(identifier: u32, state: SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, goal: SatelliteGoals) -> SatelliteStatus {
-        if is_satellite_done(state, &goal) {
-            return SatelliteStatus::Done;
+        return if is_satellite_done(state, &goal) {
+            SatelliteStatus::Done
         } else {
-            return SatelliteStatus::NotDone(identifier, satellite, instrument, mode, new_direction, previous_direction);
+            SatelliteStatus::NotDone(identifier, satellite, instrument, mode, new_direction, previous_direction)
         }
     }
 }
