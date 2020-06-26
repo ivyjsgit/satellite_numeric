@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 anyhop = {git = "https://github.com/gjf2a/anyhop"}
+pddl_problem_parser = {git = "https://github.com/gjf2a/pddl_problem_parser"}
 sexpy = "0.5.6"
 io-error = "0.1.1"
 strum = "0.13.0"
