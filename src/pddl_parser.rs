@@ -123,12 +123,12 @@ impl SatelliteToU32 {
     pub fn obj_get(&self, p: &Predicate, objects: &HashMap<String, usize>, name: String) -> Option<u32> {
         match name.as_str(){
             "on_board" => Some(*self.supports.get(p.get_arg(0)).unwrap()),
-            "supports" => Some(*self.supports.get(p.get_arg(0)).unwrap()),
-            "pointing" => Some(*self.pointing.get(p.get_arg(0)).unwrap()),
-            "power_on" => Some(*self.supports.get(p.get_arg(0)).unwrap()),
-            "calibrated" => Some(*self.supports.get(p.get_arg(0)).unwrap()),
-            "have_image" => Some(*self.supports.get(p.get_arg(0)).unwrap()),
-            "calibration_target" => Some(*self.supports.get(p.get_arg(0)).unwrap()),
+            "supports" => Some(*self.supports.get(p.get_arg(1)).unwrap()),
+            "pointing" => Some(*self.pointing.get(p.get_arg(2)).unwrap()),
+            "power_on" => Some(*self.supports.get(p.get_arg(3)).unwrap()),
+            "calibrated" => Some(*self.supports.get(p.get_arg(4)).unwrap()),
+            "have_image" => Some(*self.supports.get(p.get_arg(5)).unwrap()),
+            "calibration_target" => Some(*self.supports.get(p.get_arg(6)).unwrap()),
             _ => None
         }
     }
