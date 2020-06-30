@@ -20,6 +20,9 @@ pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteStat
     let parsed = pddl_problem_parser::PddlParser::parse(contents.as_str())?;
 
     let objects = enumerate_objects(&parsed);
+
+    println!("objects {:?}", objects);
+
     let satellite_state = extract_state(&parsed,&objects);
 
     let goals = extract_goals(&parsed, &objects);
@@ -51,14 +54,17 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
 
     for pred in parsed.bool_state.iter() {
         if pred.get_tag() == "on_board" {
+            //map satellite -> vec<instrument>
             let onboard_inserter = decode_onboard(&pred, &objects);
-            let turn_into_instrument = |n| Instrument(n); //This needs to be mapped onto onboard_inserted.1
-            onboard.insert(Satellite(onboard_inserter.0), onboard_inserter.1.into_iter().map(turn_into_instrument).collect());
+            match onboard.get_mut(&Satellite(onboard_inserter.0)){
+                None => {onboard.insert(Satellite(onboard_inserter.0),vec![Instrument(onboard_inserter.1)]);},
+                Some(n) => n.push(Instrument(onboard_inserter.1)),
+            };
         } else if pred.get_tag() == "supports" {
             let supports_inserter = decode_supports(&pred, &objects);
             let turn_into_mode = |n| Mode(n);
             supports.insert(Instrument(supports_inserter.0), supports_inserter.1.into_iter().map(turn_into_mode).collect());
-        }else if pred.get_tag() == "direction" {
+        }else if pred.get_tag() == "pointing" {
             let decoded_pointing = decode_pointing(&pred, &objects);
             pointing.insert(Satellite(decoded_pointing.0), Direction(decoded_pointing.1));
         }else if pred.get_tag() == "power_avail" {
@@ -78,15 +84,11 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
     return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target);
 }
 
-fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, Vec<u32>) {
-    let satellite = obj_get(p.get_arg(0), objects);
-    let mut instruments = vec![];
+fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
+    let instrument = obj_get(p.get_arg(0), objects);
+    let satellite = obj_get(p.get_arg(1), objects);
 
-    for i in 1..p.num_args() {
-        instruments.push(obj_get(p.get_arg(i), objects));
-    }
-
-    (satellite, instruments)
+    return (satellite, instrument);
 }
 
 fn decode_supports(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, Vec<u32>) {

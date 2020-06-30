@@ -80,6 +80,10 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
             let new_direction = goal_image_clone;
 
             let satellite = brute_force_satellite(state, &instrument.unwrap(), mode).unwrap();
+
+            println!("keys {:?} values {:?}", state.pointing.keys(), state.pointing.values());
+            println!("satellite: {:?} ", satellite);
+
             let previous_direction = state.pointing.get(&satellite.clone()).unwrap();
 
             // tasks.push(vec![Task::Method(ScheduleOne(goal_image_clone)),Task::Method(ScheduleAll)]);

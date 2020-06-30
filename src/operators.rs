@@ -74,6 +74,10 @@ impl SatelliteState {
     //  turn_to_helper() or clone it when passing it to turn_to_helper(). I have reworked
     //  things so that we are lending it.
     pub fn turn_to(&mut self, satellite: &SatelliteEnum, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) -> bool {
+
+        println!("slew time table keys: {:?} values {:?}", self.slew_time.keys(), self.slew_time.values());
+
+
         if (self.pointing_helper(satellite, previous_direction)) && (new_direction != previous_direction) {
             // GJF: *** I had to clone them here to create the key for the lookup.
             let key = (new_direction.clone(), previous_direction.clone());
