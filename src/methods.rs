@@ -76,18 +76,15 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         if !(state.have_image.get(goal_image) == goal.have_image.get(goal_image)) {
             let goal_image_clone = goal_image.clone();
             let mode = goal.have_image.get(goal_image).unwrap();
-            let instrument = brute_force_instrument(state, mode); //First look up the goal image to see which mode it should be in, and then look up which mode it should be in.
+            println!("\n\n");
+            let instrument = brute_force_instrument(state, mode).unwrap(); //First look up the goal image to see which mode it should be in, and then look up which mode it should be in.
             let new_direction = goal_image_clone;
 
-            let satellite = brute_force_satellite(state, &instrument.unwrap(), mode).unwrap();
-
-            println!("keys {:?} values {:?}", state.pointing.keys(), state.pointing.values());
-            println!("satellite: {:?} ", satellite);
-
+            let satellite = brute_force_satellite(state, &instrument, mode).unwrap();
             let previous_direction = state.pointing.get(&satellite.clone()).unwrap();
 
             // tasks.push(vec![Task::Method(ScheduleOne(goal_image_clone)),Task::Method(ScheduleAll)]);
-            tasks.push(vec![Task::Method(ScheduleOne(satellite, instrument.unwrap(), mode.clone(), new_direction, previous_direction.clone())), Task::Method(ScheduleAll)]);
+            tasks.push(vec![Task::Method(ScheduleOne(satellite, instrument, mode.clone(), new_direction, previous_direction.clone())), Task::Method(ScheduleAll)]);
         } else {
             let image_clone = goal_image.clone();
             completed_tasks.push(image_clone);

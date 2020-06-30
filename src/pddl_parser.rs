@@ -61,9 +61,11 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
                 Some(n) => n.push(Instrument(onboard_inserter.1)),
             };
         } else if pred.get_tag() == "supports" {
-            let supports_inserter = decode_supports(&pred, &objects);
-            let turn_into_mode = |n| Mode(n);
-            supports.insert(Instrument(supports_inserter.0), supports_inserter.1.into_iter().map(turn_into_mode).collect());
+            let support_inserter = decode_supports(&pred, &objects);
+            match supports.get_mut(&Instrument(support_inserter.0)){
+                None => {supports.insert(Instrument(support_inserter.0), vec![Mode(support_inserter.1)]);},
+                Some(n) => n.push(Mode(support_inserter.1)),
+            };
         }else if pred.get_tag() == "pointing" {
             let decoded_pointing = decode_pointing(&pred, &objects);
             pointing.insert(Satellite(decoded_pointing.0), Direction(decoded_pointing.1));
@@ -91,15 +93,13 @@ fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
     return (satellite, instrument);
 }
 
-fn decode_supports(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, Vec<u32>) {
-    let instruments = obj_get(p.get_arg(0), objects);
-    let mut modes = vec![];
+fn decode_supports(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
+    //instrument modes
+    let instrument = obj_get(p.get_arg(0), objects);
+    let mode = obj_get(p.get_arg(1), objects);
 
-    for i in 1..p.num_args() {
-        modes.push(obj_get(p.get_arg(i), objects));
-    }
+    return (instrument, mode);
 
-    (instruments, modes)
 }
 
 fn decode_pointing(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
