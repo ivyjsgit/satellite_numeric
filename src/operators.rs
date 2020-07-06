@@ -106,13 +106,10 @@ impl SatelliteState {
 
     fn turn_to_helper(&mut self, satellite: &SatelliteEnum, x: I40F24, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
 
-
         if self.fuel.get(satellite).unwrap() >= &x {
-            if self.pointing_helper(satellite, new_direction) && !self.pointing_helper(satellite, previous_direction) {
                 self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel.get(satellite).unwrap() - I40F24::from_num(1)));
                 self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel_used + I40F24::from_num(1)));
                 self.pointing.insert(satellite.clone(),new_direction.clone());
-            }
         }
     }
     fn switch_on(&mut self, instrument: &SatelliteEnum, satellite: &SatelliteEnum) -> bool {
@@ -150,15 +147,20 @@ impl SatelliteState {
     }
 
     pub fn calibrate(&mut self, satellite: &SatelliteEnum, instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
+        println!("Calibrating {:?} {:?} {:?}", satellite, instrument, direction);
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing_helper(satellite, direction) && self.power_on.contains(instrument) {
+            println!("Able to calibrate!");
             let instrument_clone = instrument.clone();
             self.calibrated.push(instrument_clone);
             return true;
         } else {
+            println!("Not able to calibrate!");
+            println!("has instrument: {} calibration helper: {} pointing helper: {} power on helper: {}",self.onboard.get(satellite).unwrap().contains(instrument),self.calibrate_helper(&instrument, &direction),self.pointing_helper(satellite, direction), self.power_on.contains(instrument)  );
             return false;
         }
     }
     fn calibrate_helper(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
+        println!("!!! Our calibrations are as such: {:?}", self.calibration_target);
         return match self.calibration_target.get(instrument) {
             Some(x) => x == direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.
