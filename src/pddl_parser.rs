@@ -98,12 +98,14 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
 
     //Parse things with an equals in them
     for (pred, value) in parsed.i40f24_state.iter(){
+        // println!("Our current pred is: {:?}", pred);
         if pred.get_tag() == "data_capacity"{
             let satellite = Satellite(obj_get(pred.get_arg(0), objects));
             data_capacity.insert(satellite, value.to_num::<u32>());
         }else if pred.get_tag() == "fuel"{
+            println!("???");
             let satellite = Satellite(obj_get(pred.get_arg(0), objects));
-            satellite_fuel_capacity.insert(satellite,value.to_num::<u32>());
+            fuel.insert(satellite,value.to_num::<u32>());
         }else if pred.get_tag() == "slew_time" {
             let position_a = Direction(obj_get(pred.get_arg(0), objects));
             let position_b = Direction(obj_get(pred.get_arg(1), objects));
@@ -114,10 +116,6 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
             satellite_data_stored.insert((position,mode), value.to_num::<u32>());
         }else if pred.get_tag() == "fuel_used"{
             fuel_used = value.to_num::<u32>();
-        }else if pred.get_tag() == "fuel" {
-            println!("Attempting to insert into fuel");
-            let satellite = Satellite(obj_get(pred.get_arg(0), objects));
-            fuel.insert(satellite, value.to_num::<u32>());
         }
     }
 
@@ -126,7 +124,7 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
     }
 
     println!("our fuel is {:?}", fuel);
-    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, total_data_stored,satellite_data_stored,satellite_fuel_capacity,slew_time,fuel_used, fuel);
+    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, total_data_stored,satellite_data_stored,slew_time,fuel_used, fuel);
 }
 
 fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
