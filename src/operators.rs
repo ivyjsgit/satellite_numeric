@@ -2,6 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use anyhop::{Atom, Operator};
 use strum_macros::*;
+use fixed::types::I40F24;
+
 
 use crate::methods::SatelliteStatus;
 use crate::methods::SatelliteStatus::{Done, NotDone};
@@ -39,7 +41,7 @@ pub struct SatelliteState {
     pub total_data_stored: u32,
     pub satellite_data_stored: BTreeMap<SatelliteEnum, u32>,
     pub satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>,
-    pub slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
+    pub slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>,
     pub fuel_used: u32,
     pub fuel: u32,
     pub status: SatelliteStatus,
@@ -56,7 +58,7 @@ impl SatelliteState {
         self.total_data_stored = size;
     }
     //slew_time
-    pub fn set_slew_time(&mut self, a: &SatelliteEnum, b: &SatelliteEnum, time: u32) {
+    pub fn set_slew_time(&mut self, a: &SatelliteEnum, b: &SatelliteEnum, time: I40F24) {
         // GJF: *** The ownership issues are resolved by cloning a and b at this stage.
         self.slew_time.insert((a.clone(), b.clone()), time);
     }
@@ -86,7 +88,7 @@ impl SatelliteState {
                 Some(x) => *x,
                 None => panic!(format!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1))
             };
-            self.turn_to_helper(satellite, slew_time, new_direction, previous_direction);
+            self.turn_to_helper(satellite, (slew_time.to_num::<u32>()), new_direction, previous_direction);
             return true;
         } else {
             return false;
@@ -104,8 +106,8 @@ impl SatelliteState {
     fn turn_to_helper(&mut self, satellite: &SatelliteEnum, x: u32, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
         if self.fuel >= x {
             if self.pointing_helper(satellite, new_direction) && !self.pointing_helper(satellite, previous_direction) {
-                self.set_slew_time(new_direction, previous_direction, self.fuel - 1);
-                self.set_slew_time(new_direction, previous_direction, self.fuel_used + 1);
+                self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel - 1));
+                self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel_used + 1));
             }
         }
     }

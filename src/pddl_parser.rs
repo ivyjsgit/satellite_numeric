@@ -6,6 +6,7 @@ use std::rc::{self, Rc};
 use pddl_problem_parser::{Predicate, PddlProblem};
 use crate::operators::{SatelliteEnum, SatelliteGoals, SatelliteState};
 use crate::operators::SatelliteEnum::{Direction, Instrument, Mode, Satellite};
+use fixed::types::I40F24;
 
 //This is because the parsing library actually uses the fields.
 
@@ -43,6 +44,7 @@ fn enumerate_objects(parsed: &PddlProblem) -> BTreeMap<String,u32> {
 //onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target
 fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> SatelliteState {
 
+    //These are everything that don't start with an equal
     let mut onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>= BTreeMap::new();
     let mut supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>> = BTreeMap::new();
     let mut pointing: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
@@ -51,6 +53,14 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
     let mut calibrated: Vec<SatelliteEnum> = vec![];
     let mut have_image: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
     let mut calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+
+    //These things begin with an equal.
+    let mut data_capacity : BTreeMap<SatelliteEnum, u32> = BTreeMap::new();
+    let mut satellite_data_stored: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+    let mut satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32> = BTreeMap::new();
+    let mut slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24> = BTreeMap::new();
+    let mut fuel_used = 0;
+    let mut fuel = 0;
 
     for pred in parsed.bool_state.iter() {
         if pred.get_tag() == "on_board" {
@@ -81,6 +91,21 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
         }else if pred.get_tag() == "calibration_target" {
             let decoded_calibration_target = decode_calibration_target(&pred, &objects);
             calibration_target.insert(Instrument(decoded_calibration_target.0), Direction(decoded_calibration_target.1));
+        }
+    }
+    
+    //Parse things with an equals in them
+    for (pred, value) in parsed.i40f24_state.iter(){
+        if pred.get_tag() == "data_capacity"{
+            let satellite = Satellite(obj_get(pred.get_arg(0), objects));
+            data_capacity.insert(satellite, value.to_num::<u32>());
+        }else if pred.get_tag() == "fuel"{
+            let satellite = Satellite(obj_get(pred.get_arg(0), objects));
+            satellite_fuel_capacity.insert(satellite,value.to_num::<u32>());
+        }else if pred.get_tag() == "slew_time" {
+            let a = Direction(obj_get(pred.get_arg(0), objects));
+            let b = Direction(obj_get(pred.get_arg(1), objects));
+            slew_time.insert((a,b), value);
         }
     }
     return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target);

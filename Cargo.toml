@@ -12,3 +12,4 @@ pddl_problem_parser = {git = "https://github.com/gjf2a/pddl_problem_parser"}
 io-error = "0.1.1"
 strum = "0.13.0"
 strum_macros = "0.13.0"
+fixed = "1.0.0"
