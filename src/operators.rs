@@ -86,7 +86,7 @@ impl SatelliteState {
             };
             self.turn_to_helper(satellite, (slew_time.to_num::<u32>()), new_direction, previous_direction);
             return true;
-        } else if !(self.pointing_helper(satellite, previous_direction)){ //Prevents short circuiting of the and from earlier
+        } else if self.pointing_helper(satellite, new_direction){ //Prevents short circuiting of the and from earlier
             return false
         }else {
             return false;
