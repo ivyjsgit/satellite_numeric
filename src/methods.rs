@@ -58,14 +58,27 @@ fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: Satel
     }])
 }
 
-fn schedule_one(_state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
+fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     use SatelliteMethod::*;
     use MethodResult::*;
     use Task::*;
-    TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),
-                        Method(Switching(satellite, instrument)),
-                        Operator(Calibrate(satellite, instrument, new_direction)),
-                        Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+    if pointing_helper(state,&satellite, &new_direction){ //Prevents short circuiting of the and from earlier
+        return   TaskLists(vec![vec![Method(Switching(satellite, instrument)),
+                                            Operator(Calibrate(satellite, instrument, new_direction)),
+                                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+    }else{
+        TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),
+                            Method(Switching(satellite, instrument)),
+                            Operator(Calibrate(satellite, instrument, new_direction)),
+                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+    }
+}
+
+fn pointing_helper(state: &SatelliteState, satellite: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
+    return match state.pointing.get(satellite) {
+        Some(x) => x == direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+        None => false, //If the lookup fails, the if statement should fail.
+    };
 }
 
 fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {

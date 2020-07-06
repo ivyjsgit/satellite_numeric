@@ -60,7 +60,7 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
     let mut satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32> = BTreeMap::new();
     let mut slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24> = BTreeMap::new();
     let mut fuel_used = 0;
-    let mut fuel = 0;
+    let mut fuel: BTreeMap<SatelliteEnum, u32>=  BTreeMap::new();
 
     let mut total_data_stored = 0;
 
@@ -112,9 +112,12 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
             let position = Direction(obj_get(pred.get_arg(0), objects));
             let mode = Mode(obj_get(pred.get_arg(0), objects));
             satellite_data_stored.insert((position,mode), value.to_num::<u32>());
-
         }else if pred.get_tag() == "fuel_used"{
             fuel_used = value.to_num::<u32>();
+        }else if pred.get_tag() == "fuel" {
+            println!("Attempting to insert into fuel");
+            let satellite = Satellite(obj_get(pred.get_arg(0), objects));
+            fuel.insert(satellite, value.to_num::<u32>());
         }
     }
 
@@ -122,7 +125,8 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
         total_data_stored+=*value;
     }
 
-    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, total_data_stored,satellite_data_stored,satellite_fuel_capacity,slew_time,fuel_used);
+    println!("our fuel is {:?}", fuel);
+    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, total_data_stored,satellite_data_stored,satellite_fuel_capacity,slew_time,fuel_used, fuel);
 }
 
 fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
