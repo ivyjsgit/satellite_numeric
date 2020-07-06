@@ -56,11 +56,13 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
 
     //These things begin with an equal.
     let mut data_capacity : BTreeMap<SatelliteEnum, u32> = BTreeMap::new();
-    let mut satellite_data_stored: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+    let mut satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32> = BTreeMap::new();
     let mut satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32> = BTreeMap::new();
     let mut slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24> = BTreeMap::new();
     let mut fuel_used = 0;
     let mut fuel = 0;
+
+    let mut total_data_stored = 0;
 
     for pred in parsed.bool_state.iter() {
         if pred.get_tag() == "on_board" {
@@ -93,7 +95,7 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
             calibration_target.insert(Instrument(decoded_calibration_target.0), Direction(decoded_calibration_target.1));
         }
     }
-    
+
     //Parse things with an equals in them
     for (pred, value) in parsed.i40f24_state.iter(){
         if pred.get_tag() == "data_capacity"{
@@ -103,12 +105,24 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
             let satellite = Satellite(obj_get(pred.get_arg(0), objects));
             satellite_fuel_capacity.insert(satellite,value.to_num::<u32>());
         }else if pred.get_tag() == "slew_time" {
-            let a = Direction(obj_get(pred.get_arg(0), objects));
-            let b = Direction(obj_get(pred.get_arg(1), objects));
-            slew_time.insert((a,b), value);
+            let position_a = Direction(obj_get(pred.get_arg(0), objects));
+            let position_b = Direction(obj_get(pred.get_arg(1), objects));
+            slew_time.insert((position_a, position_b), *value);
+        }else if pred.get_tag() == "data"{
+            let position = Direction(obj_get(pred.get_arg(0), objects));
+            let mode = Mode(obj_get(pred.get_arg(0), objects));
+            satellite_data_stored.insert((position,mode), value.to_num::<u32>());
+
+        }else if pred.get_tag() == "fuel_used"{
+            fuel_used = value.to_num::<u32>();
         }
     }
-    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target);
+
+    for value in satellite_data_stored.values().into_iter(){
+        total_data_stored+=*value;
+    }
+
+    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, total_data_stored,satellite_data_stored,satellite_fuel_capacity,slew_time,fuel_used);
 }
 
 fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
