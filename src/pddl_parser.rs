@@ -33,16 +33,16 @@ pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteStat
         return Ok((satellite_state, goals));
 }
 
-fn enumerate_objects(parsed: &PddlProblem) -> BTreeMap<String,u32> {
-    let mut objects: BTreeMap<String, u32> = BTreeMap::new();
+fn enumerate_objects(parsed: &PddlProblem) -> BTreeMap<String,I40F24> {
+    let mut objects: BTreeMap<String, I40F24> = BTreeMap::new();
     for object in parsed.obj2type.keys() {
-        objects.insert(String::from(object), objects.len() as u32);
+        objects.insert(String::from(object), I40F24::from_num(objects.len()));
     }
     return objects
 }
 
 //onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target
-fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> SatelliteState {
+fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> SatelliteState {
 
     //These are everything that don't start with an equal
     let mut onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>= BTreeMap::new();
@@ -55,12 +55,12 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
     let mut calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
 
     //These things begin with an equal.
-    let mut data_capacity : BTreeMap<SatelliteEnum, u32> = BTreeMap::new();
-    let mut satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32> = BTreeMap::new();
-    let mut satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32> = BTreeMap::new();
+    let mut data_capacity : BTreeMap<SatelliteEnum, I40F24> = BTreeMap::new();
+    let mut satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24> = BTreeMap::new();
+    let mut satellite_fuel_capacity: BTreeMap<SatelliteEnum, I40F24> = BTreeMap::new();
     let mut slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24> = BTreeMap::new();
     let mut fuel_used = 0;
-    let mut fuel: BTreeMap<SatelliteEnum, u32>=  BTreeMap::new();
+    let mut fuel: BTreeMap<SatelliteEnum, I40F24>=  BTreeMap::new();
 
     let mut total_data_stored = 0;
 
@@ -101,11 +101,11 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
         // println!("Our current pred is: {:?}", pred);
         if pred.get_tag() == "data_capacity"{
             let satellite = Satellite(obj_get(pred.get_arg(0), objects));
-            data_capacity.insert(satellite, value.to_num::<u32>());
+            data_capacity.insert(satellite, value.to_num::<I40F24>());
         }else if pred.get_tag() == "fuel"{
             println!("???");
             let satellite = Satellite(obj_get(pred.get_arg(0), objects));
-            fuel.insert(satellite,value.to_num::<u32>());
+            fuel.insert(satellite,value.to_num::<I40F24>());
         }else if pred.get_tag() == "slew_time" {
             let position_a = Direction(obj_get(pred.get_arg(0), objects));
             let position_b = Direction(obj_get(pred.get_arg(1), objects));
@@ -113,28 +113,28 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> Satell
         }else if pred.get_tag() == "data"{
             let position = Direction(obj_get(pred.get_arg(0), objects));
             let mode = Mode(obj_get(pred.get_arg(0), objects));
-            satellite_data_stored.insert((position,mode), value.to_num::<u32>());
+            satellite_data_stored.insert((position,mode), *value);
         }else if pred.get_tag() == "fuel_used"{
-            fuel_used = value.to_num::<u32>();
+            fuel_used = value.to_num();
         }
     }
-
     for value in satellite_data_stored.values().into_iter(){
-        total_data_stored+=*value;
+        let value_as_u32 = value.to_num::<u32>();
+        total_data_stored+=value_as_u32;
     }
 
     println!("our fuel is {:?}", fuel);
-    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, total_data_stored,satellite_data_stored,slew_time,fuel_used, fuel);
+    return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, I40F24::from_num(total_data_stored),satellite_data_stored,slew_time,I40F24::from_num(fuel_used), fuel);
 }
 
-fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
+fn decode_onboard(p: &Predicate, objects: &BTreeMap<String,I40F24>) -> (I40F24, I40F24) {
     let instrument = obj_get(p.get_arg(0), objects);
     let satellite = obj_get(p.get_arg(1), objects);
 
     return (satellite, instrument);
 }
 
-fn decode_supports(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
+fn decode_supports(p: &Predicate, objects: &BTreeMap<String,I40F24>) -> (I40F24, I40F24) {
     //instrument modes
     let instrument = obj_get(p.get_arg(0), objects);
     let mode = obj_get(p.get_arg(1), objects);
@@ -143,32 +143,32 @@ fn decode_supports(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) 
 
 }
 
-fn decode_pointing(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
+fn decode_pointing(p: &Predicate, objects: &BTreeMap<String,I40F24>) -> (I40F24, I40F24) {
     let satellite = obj_get(p.get_arg(0), objects);
     let direction = obj_get(p.get_arg(1), objects);
     (satellite, direction)
 }
 
-fn decode_have_image(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
+fn decode_have_image(p: &Predicate, objects: &BTreeMap<String,I40F24>) -> (I40F24, I40F24) {
     let direction = obj_get(p.get_arg(0), objects);
     let mode = obj_get(p.get_arg(1), objects);
     (direction, mode)
 }
 
-fn decode_calibration_target(p: &Predicate, objects: &BTreeMap<String,u32>) -> (u32, u32) {
+fn decode_calibration_target(p: &Predicate, objects: &BTreeMap<String,I40F24>) -> (I40F24, I40F24) {
     let instrument = obj_get(p.get_arg(0), objects);
     let direction = obj_get(p.get_arg(1), objects);
     (instrument, direction)
 }
 
-fn obj_get(obj_name: &str, objects: &BTreeMap<String,u32>) -> u32 {
+fn obj_get(obj_name: &str, objects: &BTreeMap<String,I40F24>) -> I40F24 {
     *(objects.get(obj_name).unwrap())
 }
 
 
-fn extract_goals(parsed: &PddlProblem, objects: &BTreeMap<String,u32>) -> SatelliteGoals {
+fn extract_goals(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> SatelliteGoals {
     let mut have_image: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
-    let fuel_used = 0;
+    let fuel_used = I40F24::from_num(0);
     for goal in parsed.goals.iter() {
         if goal.get_tag() == "have_image" {
             let decoded_have_image = decode_calibration_target(&goal, &objects);

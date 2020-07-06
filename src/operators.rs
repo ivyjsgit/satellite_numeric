@@ -12,10 +12,10 @@ use crate::methods::SatelliteStatus::{Done, NotDone};
 pub enum SatelliteEnum {
     //We will have to have a lookup table that goes from usize -> String for these.
     //This is just here because you can't have the copy attribute because Strings aren't copyable.
-    Instrument(u32),
-    Satellite(u32),
-    Mode(u32),
-    Direction(u32),
+    Instrument(I40F24),
+    Satellite(I40F24),
+    Mode(I40F24),
+    Direction(I40F24),
 }
 
 #[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
@@ -35,20 +35,20 @@ pub struct SatelliteState {
     pub have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
     //instrument -> direction
     pub calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    //map satelite -> u32
-    pub data_capacity: BTreeMap<SatelliteEnum, u32>,
-    //needs to be u32
-    pub total_data_stored: u32,
-    pub satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>,
+    //map satelite -> I40F24
+    pub data_capacity: BTreeMap<SatelliteEnum, I40F24>,
+    //needs to be I40F24
+    pub total_data_stored: I40F24,
+    pub satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>,
     pub slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>,
-    pub fuel_used: u32,
+    pub fuel_used: I40F24,
     //satellite -> fuel
-    pub fuel: BTreeMap<SatelliteEnum, u32>,
+    pub fuel: BTreeMap<SatelliteEnum, I40F24>,
     pub status: SatelliteStatus,
 }
 
 impl SatelliteState {
-    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, total_data_stored: u32, satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, fuel_used: u32, fuel: BTreeMap<SatelliteEnum, u32>) -> Self {
+    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, I40F24>, total_data_stored: I40F24, satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, fuel_used: I40F24, fuel: BTreeMap<SatelliteEnum, I40F24>) -> Self {
         SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, total_data_stored, satellite_data_stored, slew_time, fuel_used, fuel, status: (Done) }
     }
 }
@@ -56,11 +56,11 @@ impl SatelliteState {
 
 impl SatelliteState {
     //data_capacity
-    pub fn set_data_capacity(&mut self, satellite: SatelliteEnum, capacity: u32) {
+    pub fn set_data_capacity(&mut self, satellite: SatelliteEnum, capacity: I40F24) {
         self.data_capacity.insert(satellite, capacity);
     }
     //data_stored
-    pub fn set_data_stored(&mut self, size: u32) {
+    pub fn set_data_stored(&mut self, size: I40F24) {
         self.total_data_stored = size;
     }
     //slew_time
@@ -69,12 +69,12 @@ impl SatelliteState {
         self.slew_time.insert((a.clone(), b.clone()), time);
     }
     //fuel
-    pub fn set_satellite_fuel(&mut self, satellite: &SatelliteEnum, capacity: u32) {
+    pub fn set_satellite_fuel(&mut self, satellite: &SatelliteEnum, capacity: I40F24) {
         // GJF: *** Same idea here.
         self.fuel.insert(satellite.clone(), capacity);
     }
     //fuel-used
-    pub fn set_fuel_used(&mut self, fuel: u32) {
+    pub fn set_fuel_used(&mut self, fuel: I40F24) {
         self.fuel_used = fuel;
     }
     // GJF: *** Because SatelliteEnum is not a Copy type, we need to either lend it to
@@ -89,7 +89,7 @@ impl SatelliteState {
                 Some(x) => *x,
                 None => panic!(format!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1))
             };
-            self.turn_to_helper(satellite, (slew_time.to_num::<u32>()), new_direction, previous_direction);
+            self.turn_to_helper(satellite, (slew_time), new_direction, previous_direction);
             return true;
         }else {
             return false;
@@ -104,13 +104,13 @@ impl SatelliteState {
     }
 
 
-    fn turn_to_helper(&mut self, satellite: &SatelliteEnum, x: u32, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
+    fn turn_to_helper(&mut self, satellite: &SatelliteEnum, x: I40F24, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
 
 
         if self.fuel.get(satellite).unwrap() >= &x {
             if self.pointing_helper(satellite, new_direction) && !self.pointing_helper(satellite, previous_direction) {
-                self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel.get(satellite).unwrap() - 1));
-                self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel_used + 1));
+                self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel.get(satellite).unwrap() - I40F24::from_num(1)));
+                self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel_used + I40F24::from_num(1)));
                 self.pointing.insert(satellite.clone(),new_direction.clone());
             }
         }
@@ -195,14 +195,14 @@ impl SatelliteState {
             None => false, //If the lookup fails, the if statement should fail.
         };
     }
-    fn get_satellite_data_used(&mut self, direction: &SatelliteEnum, mode: &SatelliteEnum) -> u32 {
+    fn get_satellite_data_used(&mut self, direction: &SatelliteEnum, mode: &SatelliteEnum) -> I40F24 {
         return match self.satellite_data_stored.get(&(*direction, *mode)) {
-            Some(x) => *x,
-            None => 0,
+            Some(x) => I40F24::from_num(*x),
+            None => I40F24::from_num(0),
         };
     }
 
-    // pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, u32>, total_data_stored: u32, satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), u32>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, u32>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, fuel_used: u32) -> Self {
+    // pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, I40F24>, total_data_stored: I40F24, satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, I40F24>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, fuel_used: I40F24) -> Self {
     //     SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, total_data_stored, satellite_data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel: (0), status: (Done) }
     // }
 
@@ -213,11 +213,11 @@ impl SatelliteState {
 pub struct SatelliteGoals {
     //Have_image maps from location -> instrument
     pub have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    pub fuel_used: u32,
+    pub fuel_used: I40F24,
 }
 
 impl SatelliteGoals {
-    pub fn new(have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, fuel_used: u32) -> Self {
+    pub fn new(have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, fuel_used: I40F24) -> Self {
         SatelliteGoals { have_image, fuel_used }
     }
     pub fn all_met_in(&self, state: &SatelliteState) -> bool {
