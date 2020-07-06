@@ -76,7 +76,6 @@ impl SatelliteState {
     //  turn_to_helper() or clone it when passing it to turn_to_helper(). I have reworked
     //  things so that we are lending it.
     pub fn turn_to(&mut self, satellite: &SatelliteEnum, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) -> bool {
-
         if (self.pointing_helper(satellite, previous_direction)) && (new_direction != previous_direction) {
             // GJF: *** I had to clone them here to create the key for the lookup.
             let key = (new_direction.clone(), previous_direction.clone());
@@ -87,6 +86,8 @@ impl SatelliteState {
             };
             self.turn_to_helper(satellite, (slew_time.to_num::<u32>()), new_direction, previous_direction);
             return true;
+        } else if new_direction==previous_direction{
+            return false;
         } else {
             return false;
         }
@@ -105,6 +106,7 @@ impl SatelliteState {
             if self.pointing_helper(satellite, new_direction) && !self.pointing_helper(satellite, previous_direction) {
                 self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel - 1));
                 self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel_used + 1));
+                self.pointing.insert(satellite.clone(),new_direction.clone());
             }
         }
     }

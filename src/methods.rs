@@ -69,7 +69,7 @@ fn schedule_one(_state: &SatelliteState, satellite: SatelliteEnum, instrument: S
 }
 
 fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
-    let mut tasks: Vec<Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>>> = vec![vec![]];
+    let mut tasks: Vec<Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>>> = vec![];
     let mut completed_tasks: Vec<SatelliteEnum> = vec![];
 
     for goal_image in goal.have_image.keys() {
