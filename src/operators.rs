@@ -147,9 +147,9 @@ impl SatelliteState {
     }
 
     pub fn calibrate(&mut self, satellite: &SatelliteEnum, instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
-        println!("Calibrating {:?} {:?} {:?}", satellite, instrument, direction);
+        // println!("Calibrating {:?} {:?} {:?}", satellite, instrument, direction);
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing_helper(satellite, direction) && self.power_on.contains(instrument) {
-            println!("Able to calibrate!");
+            // println!("Able to calibrate!");
             let instrument_clone = instrument.clone();
             self.calibrated.push(instrument_clone);
             return true;
@@ -160,9 +160,9 @@ impl SatelliteState {
         }
     }
     fn calibrate_helper(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
-        println!("!!! Our calibrations are as such: {:?}", self.calibration_target);
+        // println!("!!! Our calibrations are as such: {:?}", self.calibration_target); //This should search for calibration target!
         return match self.calibration_target.get(instrument) {
-            Some(x) => x == direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+            Some(x) => true, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.
         };
     }

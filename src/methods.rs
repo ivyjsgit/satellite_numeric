@@ -69,7 +69,8 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
     }else{
         TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),
                             Method(Switching(satellite, instrument)),
-                            Operator(Calibrate(satellite, instrument, new_direction)),
+                            Operator(Calibrate(satellite, instrument, new_direction)), //Needs to check to see if already calibrated. Search for calibration target
+
                             Operator(TakeImage(satellite, new_direction, instrument, mode))]])
     }
 }
@@ -105,7 +106,7 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         }
 
     }
-    println!("\n\n");
+    // println!("\n\n");
 
     return if goal.have_image.keys().eq(&completed_tasks) {
         println!("We have found a plan!");
