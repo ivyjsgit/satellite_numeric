@@ -104,10 +104,7 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         }
 
     }
-    // println!("\n\n");
-
     return if goal.have_image.keys().eq(&completed_tasks) {
-        println!("We have found a plan!");
         PlanFound
     } else {
         TaskLists(tasks)
@@ -157,10 +154,23 @@ impl Goal for SatelliteGoals {
     }
 
     fn accepts(&self, state: &Self::S) -> bool {
+        println!("!!!!This is what the goal looks like: {:?}", self);
+        
+
         for (location,instrument) in self.have_image.iter(){
             let state_instrument = state.have_image.get(location);
 
             if state_instrument == None || state_instrument != Some(instrument) {
+                println!("We have failed the have_image checker!");
+                return false;
+            }
+        }
+
+        for (satellite, direction) in self.pointing.iter(){
+            let state_direction = state.pointing.get(satellite);
+
+            if state_direction == None || state_direction != Some(direction){
+                println!("We have failed the pointing checker!");
                 return false;
             }
         }
