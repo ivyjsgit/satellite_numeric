@@ -8,14 +8,6 @@ use crate::operators::{SatelliteEnum, SatelliteGoals, SatelliteState};
 use crate::operators::SatelliteEnum::{Direction, Instrument, Mode, Satellite};
 use fixed::types::I40F24;
 
-//This is because the parsing library actually uses the fields.
-
-/*
-SATELLITE STUFF
-
- */
-
-
 pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteState, SatelliteGoals)> {
     let contents = fs::read_to_string(pddl_file)?;
     let parsed = pddl_problem_parser::PddlParser::parse(contents.as_str())?;
@@ -40,8 +32,6 @@ fn enumerate_objects(parsed: &PddlProblem) -> BTreeMap<String,I40F24> {
     }
     return objects
 }
-
-//onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target
 fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> SatelliteState {
 
     //These are everything that don't start with an equal
@@ -98,12 +88,10 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> Sat
 
     //Parse things with an equals in them
     for (pred, value) in parsed.i40f24_state.iter(){
-        // println!("Our current pred is: {:?}", pred);
         if pred.get_tag() == "data_capacity"{
             let satellite = Satellite(obj_get(pred.get_arg(0), objects));
             data_capacity.insert(satellite, value.to_num::<I40F24>());
         }else if pred.get_tag() == "fuel"{
-            println!("???");
             let satellite = Satellite(obj_get(pred.get_arg(0), objects));
             fuel.insert(satellite,value.to_num::<I40F24>());
         }else if pred.get_tag() == "slew_time" {
@@ -123,7 +111,6 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> Sat
         total_data_stored+=value_as_u32;
     }
 
-    println!("our fuel is {:?}", fuel);
     return SatelliteState::new(onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target, data_capacity, I40F24::from_num(total_data_stored),satellite_data_stored,slew_time,I40F24::from_num(fuel_used), fuel);
 }
 
@@ -168,12 +155,19 @@ fn obj_get(obj_name: &str, objects: &BTreeMap<String,I40F24>) -> I40F24 {
 
 fn extract_goals(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> SatelliteGoals {
     let mut have_image: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+    let mut pointing: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
+
     let fuel_used = I40F24::from_num(0);
     for goal in parsed.goals.iter() {
         if goal.get_tag() == "have_image" {
             let decoded_have_image = decode_calibration_target(&goal, &objects);
             have_image.insert(Direction(decoded_have_image.0), Mode(decoded_have_image.1));
+        }else if goal.get_tag() == "pointing"{
+            let satellite = obj_get(goal.get_arg(0), objects);
+            let direction = obj_get(goal.get_arg(1), objects);
+
+            pointing.insert(Satellite(satellite), Direction(direction));
         }
     }
-    return SatelliteGoals::new(have_image,fuel_used);
+    return SatelliteGoals::new(have_image, pointing,fuel_used);
 }

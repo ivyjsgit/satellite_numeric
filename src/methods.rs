@@ -94,8 +94,6 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
             let instrument = brute_force_instrument(state, mode).unwrap(); //First look up the goal image to see which mode it should be in, and then look up which mode it should be in.
             let new_direction = goal_image_clone;
 
-
-
             let satellite = brute_force_satellite(state, &instrument, mode).unwrap();
             let previous_direction = state.pointing.get(&satellite.clone()).unwrap();
 
@@ -106,10 +104,7 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         }
 
     }
-    // println!("\n\n");
-
     return if goal.have_image.keys().eq(&completed_tasks) {
-        println!("We have found a plan!");
         PlanFound
     } else {
         TaskLists(tasks)
@@ -152,9 +147,34 @@ impl Method for SatelliteMethod {
 impl Goal for SatelliteGoals {
     type O = SatelliteOperator<SatelliteEnum>;
     type M = SatelliteMethod;
+    type S = SatelliteState;
 
     fn starting_tasks(&self) -> Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>> {
         vec![Task::Method(SatelliteMethod::ScheduleAll)]
+    }
+
+    fn accepts(&self, state: &Self::S) -> bool {
+        println!("!!!!This is what the goal looks like: {:?}", self);
+
+        for (location,instrument) in self.have_image.iter(){
+            let state_instrument = state.have_image.get(location);
+
+            if state_instrument == None || state_instrument != Some(instrument) {
+                println!("We have failed the have_image checker!");
+                return false;
+            }
+        }
+
+        for (satellite, direction) in self.pointing.iter(){
+            let state_direction = state.pointing.get(satellite);
+
+            if state_direction == None || state_direction != Some(direction){
+                println!("We have failed the pointing checker!");
+                return false;
+            }
+        }
+        println!("This plan has been accepted by the checker!");
+        return true;
     }
 }
 
