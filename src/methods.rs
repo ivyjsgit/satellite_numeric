@@ -94,8 +94,6 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
             let instrument = brute_force_instrument(state, mode).unwrap(); //First look up the goal image to see which mode it should be in, and then look up which mode it should be in.
             let new_direction = goal_image_clone;
 
-
-
             let satellite = brute_force_satellite(state, &instrument, mode).unwrap();
             let previous_direction = state.pointing.get(&satellite.clone()).unwrap();
 
@@ -152,9 +150,22 @@ impl Method for SatelliteMethod {
 impl Goal for SatelliteGoals {
     type O = SatelliteOperator<SatelliteEnum>;
     type M = SatelliteMethod;
+    type S = SatelliteState;
 
     fn starting_tasks(&self) -> Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>> {
         vec![Task::Method(SatelliteMethod::ScheduleAll)]
+    }
+
+    fn accepts(&self, state: &Self::S) -> bool {
+        for (location,instrument) in self.have_image.iter(){
+            let state_instrument = state.have_image.get(location);
+
+            if state_instrument == None || state_instrument != Some(instrument) {
+                return false;
+            }
+        }
+        println!("This plan has been accepted by the checker!");
+        return true;
     }
 }
 
