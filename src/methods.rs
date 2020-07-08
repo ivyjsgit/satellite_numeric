@@ -155,7 +155,6 @@ impl Goal for SatelliteGoals {
 
     fn accepts(&self, state: &Self::S) -> bool {
         println!("!!!!This is what the goal looks like: {:?}", self);
-        
 
         for (location,instrument) in self.have_image.iter(){
             let state_instrument = state.have_image.get(location);
