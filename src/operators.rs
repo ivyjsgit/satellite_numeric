@@ -147,9 +147,7 @@ impl SatelliteState {
     }
 
     pub fn calibrate(&mut self, satellite: &SatelliteEnum, instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
-        // println!("Calibrating {:?} {:?} {:?}", satellite, instrument, direction);
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing_helper(satellite, direction) && self.power_on.contains(instrument) {
-            // println!("Able to calibrate!");
             let instrument_clone = instrument.clone();
             self.calibrated.push(instrument_clone);
             return true;
@@ -203,11 +201,6 @@ impl SatelliteState {
             None => I40F24::from_num(0),
         };
     }
-
-    // pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, I40F24>, total_data_stored: I40F24, satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, satellite_fuel_capacity: BTreeMap<SatelliteEnum, I40F24>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, fuel_used: I40F24) -> Self {
-    //     SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, total_data_stored, satellite_data_stored, satellite_fuel_capacity, slew_time, fuel_used, fuel: (0), status: (Done) }
-    // }
-
 
 }
 

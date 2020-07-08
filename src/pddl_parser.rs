@@ -8,14 +8,6 @@ use crate::operators::{SatelliteEnum, SatelliteGoals, SatelliteState};
 use crate::operators::SatelliteEnum::{Direction, Instrument, Mode, Satellite};
 use fixed::types::I40F24;
 
-//This is because the parsing library actually uses the fields.
-
-/*
-SATELLITE STUFF
-
- */
-
-
 pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteState, SatelliteGoals)> {
     let contents = fs::read_to_string(pddl_file)?;
     let parsed = pddl_problem_parser::PddlParser::parse(contents.as_str())?;
@@ -40,8 +32,6 @@ fn enumerate_objects(parsed: &PddlProblem) -> BTreeMap<String,I40F24> {
     }
     return objects
 }
-
-//onboard,supports,pointing,power_avail,power_on,calibrated,have_image,calibration_target
 fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> SatelliteState {
 
     //These are everything that don't start with an equal
