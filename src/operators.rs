@@ -215,13 +215,19 @@ impl SatelliteState {
 pub struct SatelliteGoals {
     //Have_image maps from location -> instrument
     pub have_image: BTreeMap<SatelliteEnum, SatelliteEnum>,
+    //map satellite -> direction
+    pub pointing: BTreeMap<SatelliteEnum, SatelliteEnum>,
     pub fuel_used: I40F24,
 }
 
 impl SatelliteGoals {
-    pub fn new(have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, fuel_used: I40F24) -> Self {
-        SatelliteGoals { have_image, fuel_used }
+    pub fn new(have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, fuel_used: I40F24) -> Self {
+        SatelliteGoals { have_image, pointing, fuel_used }
     }
+}
+
+impl SatelliteGoals {
+
     pub fn all_met_in(&self, state: &SatelliteState) -> bool {
         for location in self.have_image.keys() {
             let goal_instrument = self.have_image.get(location).unwrap();
