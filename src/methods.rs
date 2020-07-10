@@ -49,8 +49,8 @@ pub fn is_satellite_done(state: SatelliteState, goal: &SatelliteGoals) -> bool {
 
 fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     TaskLists(vec![if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
-        vec![Operator(SwitchOff(instrument, satellite)),
-             Operator(SwitchOn(instrument, satellite))]
+        vec![Operator(SwitchOn(instrument, satellite)),
+             Operator(SwitchOff(instrument, satellite))]
     } else if state.power_on.is_empty() {
         vec![Operator(SwitchOn(instrument, satellite))]
     } else {
@@ -67,10 +67,12 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
                                             Operator(Calibrate(satellite, instrument, new_direction)),
                                             Operator(TakeImage(satellite, new_direction, instrument, mode))]])
     }else{
-        TaskLists(vec![vec![Operator(TurnTo(satellite, new_direction, previous_direction)),
-                            Method(Switching(satellite, instrument)),
-                            Operator(Calibrate(satellite, instrument, new_direction)), //Needs to check to see if already calibrated. Search for calibration target
+        let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
 
+        TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
+                            Method(Switching(satellite, instrument)),
+                            Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                            Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
                             Operator(TakeImage(satellite, new_direction, instrument, mode))]])
     }
 }
@@ -152,10 +154,7 @@ impl Goal for SatelliteGoals {
     fn starting_tasks(&self) -> Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>> {
         vec![Task::Method(SatelliteMethod::ScheduleAll)]
     }
-
     fn accepts(&self, state: &Self::S) -> bool {
-        println!("!!!!This is what the goal looks like: {:?}", self);
-
         for (location,instrument) in self.have_image.iter(){
             let state_instrument = state.have_image.get(location);
 

@@ -26,7 +26,7 @@ pub struct SatelliteState {
     pub supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>,
     //map satellite -> direction
     pub pointing: BTreeMap<SatelliteEnum, SatelliteEnum>,
-    pub power_avail: bool,
+    pub power_avail: BTreeMap<SatelliteEnum, bool>,
     //instrument
     pub power_on: Vec<SatelliteEnum>,
     //instrument
@@ -48,7 +48,7 @@ pub struct SatelliteState {
 }
 
 impl SatelliteState {
-    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: bool, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, I40F24>, total_data_stored: I40F24, satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, fuel_used: I40F24, fuel: BTreeMap<SatelliteEnum, I40F24>) -> Self {
+    pub fn new(onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>, pointing: BTreeMap<SatelliteEnum, SatelliteEnum>, power_avail: BTreeMap<SatelliteEnum, bool>, power_on: Vec<SatelliteEnum>, calibrated: Vec<SatelliteEnum>, have_image: BTreeMap<SatelliteEnum, SatelliteEnum>, calibration_target: BTreeMap<SatelliteEnum, SatelliteEnum>, data_capacity: BTreeMap<SatelliteEnum, I40F24>, total_data_stored: I40F24, satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24>, fuel_used: I40F24, fuel: BTreeMap<SatelliteEnum, I40F24>) -> Self {
         SatelliteState { onboard, supports, pointing, power_avail, power_on, calibrated, have_image, calibration_target, data_capacity, total_data_stored, satellite_data_stored, slew_time, fuel_used, fuel, status: (Done) }
     }
 }
@@ -114,7 +114,10 @@ impl SatelliteState {
     }
     fn switch_on(&mut self, instrument: &SatelliteEnum, satellite: &SatelliteEnum) -> bool {
         //precondition
-        if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_avail {
+
+
+
+        if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_avail.get(satellite) == Some(&true) {
             //effect
             let instrument_clone = instrument.clone();
 
@@ -126,41 +129,47 @@ impl SatelliteState {
                 let index = self.calibrated.iter().position(|s| s == instrument).unwrap();
                 self.calibrated.remove(index);
             }
-            self.power_avail = false;
+            self.power_avail.insert(*satellite, false);
             return true;
         } else {
+            println!("!!!failed because {:?}", self.onboard.get(satellite).unwrap().contains(instrument));
             return false;
         }
     }
     pub fn switch_off(&mut self, instrument: &SatelliteEnum, satellite: &SatelliteEnum) -> bool {
+        println!("!!!Our onboard is: {:?}", self.onboard);
+        println!("!!!Our power on is: {:?}", self.power_on);
+        println!("!!!Our instrument is: {:?}, our satellite is: {:?}", instrument, satellite);
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_on.contains(instrument) {
             //Remove instrument from the power on
             if self.power_on.contains(instrument) {
                 let index = self.power_on.iter().position(|s| s == instrument).unwrap();
                 self.power_on.remove(index);
             }
-            self.power_avail = true;
+            self.power_avail.insert(*satellite, true);
             return true;
         } else {
+            println!("Power off failed!");
             return false;
         }
     }
 
     pub fn calibrate(&mut self, satellite: &SatelliteEnum, instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
+
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.calibrate_helper(&instrument, &direction) && self.pointing_helper(satellite, direction) && self.power_on.contains(instrument) {
             let instrument_clone = instrument.clone();
             self.calibrated.push(instrument_clone);
             return true;
         } else {
-            println!("Not able to calibrate!");
-            println!("has instrument: {} calibration helper: {} pointing helper: {} power on helper: {}",self.onboard.get(satellite).unwrap().contains(instrument),self.calibrate_helper(&instrument, &direction),self.pointing_helper(satellite, direction), self.power_on.contains(instrument)  );
+            println!("!!!onboard: {:?} calibrate: {:?}, pointing: {:?}, power_on: {:?}", self.onboard.get(satellite).unwrap().contains(instrument), self.calibrate_helper(&instrument, &direction), self.pointing_helper(satellite, direction),self.power_on.contains(instrument) );
+            println!("!!!our power_on is as such: {:?}", self.power_on);
+            println!("Our instrument is: {:?}", instrument);
             return false;
         }
     }
     fn calibrate_helper(&mut self, instrument: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
-        // println!("!!! Our calibrations are as such: {:?}", self.calibration_target); //This should search for calibration target!
         return match self.calibration_target.get(instrument) {
-            Some(x) => true, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
+            Some(x) => direction == x, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
             None => false, //If the lookup fails, the if statement should fail.
         };
     }

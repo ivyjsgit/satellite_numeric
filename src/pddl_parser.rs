@@ -38,7 +38,7 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> Sat
     let mut onboard: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>>= BTreeMap::new();
     let mut supports: BTreeMap<SatelliteEnum, Vec<SatelliteEnum>> = BTreeMap::new();
     let mut pointing: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
-    let mut power_avail = false;
+    let mut power_avail:BTreeMap<SatelliteEnum, bool> = BTreeMap::new();
     let mut power_on: Vec<SatelliteEnum> = vec![];
     let mut calibrated: Vec<SatelliteEnum> = vec![];
     let mut have_image: BTreeMap<SatelliteEnum, SatelliteEnum> = BTreeMap::new();
@@ -72,7 +72,9 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> Sat
             let decoded_pointing = decode_pointing(&pred, &objects);
             pointing.insert(Satellite(decoded_pointing.0), Direction(decoded_pointing.1));
         }else if pred.get_tag() == "power_avail" {
-            power_avail = true;
+            println!("!!!!!!power is available!!!");
+            let satellite = Satellite(*objects.get(pred.get_arg(0)).unwrap());
+            power_avail.insert(satellite, true);
         }else if pred.get_tag() == "power_on" {
             power_on.push(Instrument(*objects.get(pred.get_arg(0)).unwrap()));
         } else if pred.get_tag() == "calibrated" {
