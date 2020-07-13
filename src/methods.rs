@@ -49,8 +49,8 @@ pub fn is_satellite_done(state: SatelliteState, goal: &SatelliteGoals) -> bool {
 
 fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     TaskLists(vec![if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
-        vec![Operator(SwitchOn(instrument, satellite)),
-             Operator(SwitchOff(instrument, satellite))]
+        vec![Operator(SwitchOff(instrument, satellite)),
+             Operator(SwitchOn(instrument, satellite))]
     } else if state.power_on.is_empty() {
         vec![Operator(SwitchOn(instrument, satellite))]
     } else {
@@ -62,18 +62,44 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
     use SatelliteMethod::*;
     use MethodResult::*;
     use Task::*;
-    if pointing_helper(state,&satellite, &new_direction){ //Prevents short circuiting of the and from earlier
-        return   TaskLists(vec![vec![Method(Switching(satellite, instrument)),
-                                            Operator(Calibrate(satellite, instrument, new_direction)),
-                                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
-    }else{
-        let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
 
-        TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
-                            Method(Switching(satellite, instrument)),
-                            Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
-                            Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
-                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+    let is_instrument_powered_on = state.power_on.contains(&instrument);
+
+    if pointing_helper(state,&satellite, &new_direction){ //Prevents short circuiting of the and from earlier
+        return if is_instrument_powered_on {
+            TaskLists(vec![vec![Method(Switching(satellite, instrument)),
+                                Operator(Calibrate(satellite, instrument, new_direction)),
+                                Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+        } else {
+            let last_instrument = state.power_on[state.power_on.len() - 1];
+
+            TaskLists(vec![vec![Operator(SwitchOff(last_instrument, satellite)),
+                                Method(Switching(satellite, instrument)),
+                                Operator(Calibrate(satellite, instrument, new_direction)),
+                                Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+        }
+    }else{
+        if is_instrument_powered_on{
+            let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
+
+            TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
+                                Method(Switching(satellite, instrument)),
+                                Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                                Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
+                                Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+        }else{
+            let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
+            let last_instrument = state.power_on[state.power_on.len()-1];
+
+
+            TaskLists(vec![vec![Operator(SwitchOff(last_instrument, satellite)),
+                                Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
+                                Method(Switching(satellite, instrument)),
+                                Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                                Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
+                                Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+        }
+
     }
 }
 
@@ -159,7 +185,9 @@ impl Goal for SatelliteGoals {
             let state_instrument = state.have_image.get(location);
 
             if state_instrument == None || state_instrument != Some(instrument) {
-                println!("We have failed the have_image checker!");
+                println!("!!!We have failed the have_image checker!");
+                println!("!!!Goal have_image: {:?}", self.have_image);
+                println!("!!!Actual have_image: {:?}", state.have_image);
                 return false;
             }
         }
@@ -169,6 +197,8 @@ impl Goal for SatelliteGoals {
 
             if state_direction == None || state_direction != Some(direction){
                 println!("We have failed the pointing checker!");
+                println!("!!!Goal pointing: {:?}", self.pointing);
+                println!("!!!Actual pointing: {:?}", state.pointing);
                 return false;
             }
         }

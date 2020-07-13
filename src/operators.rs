@@ -132,7 +132,8 @@ impl SatelliteState {
             self.power_avail.insert(*satellite, false);
             return true;
         } else {
-            println!("!!!failed because {:?}", self.onboard.get(satellite).unwrap().contains(instrument));
+            println!("!!!Our power_available is {:?}", self.power_avail);
+            println!("!!!Our current satellite is: {:?}", satellite);
             return false;
         }
     }
