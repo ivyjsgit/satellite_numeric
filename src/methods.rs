@@ -132,11 +132,24 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
         }
 
     }
-    return if goal.have_image.keys().eq(&completed_tasks) {
+
+    return if goal.have_image.keys().eq(&completed_tasks) && does_pass_pointing_check(state, goal){
         PlanFound
     } else {
         TaskLists(tasks)
     };
+}
+
+fn does_pass_pointing_check (state: &SatelliteState, goal: &SatelliteGoals) -> bool{
+    for satellite in goal.pointing.keys(){
+        let gotten_direction = state.pointing.get(satellite);
+        if gotten_direction == None{
+            return false;
+        }else if gotten_direction != goal.pointing.get(satellite){
+            return false;
+        }
+    }
+    return true;
 }
 
 fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum)  -> Option<SatelliteEnum> {
