@@ -1,6 +1,10 @@
 use anyhop::{Atom, Goal, Method, MethodResult, Task};
 use anyhop::MethodResult::{PlanFound, TaskLists};
 use anyhop::Task::Operator;
+use MethodResult::*;
+use Task::*;
+
+use SatelliteMethod::*;
 
 use crate::methods::SatelliteMethod::{ScheduleAll, ScheduleOne};
 use crate::operators::SatelliteOperator::{Calibrate, SwitchOff, SwitchOn, TakeImage, TurnTo};
@@ -65,56 +69,69 @@ fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: Satel
 }
 
 fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
-    use SatelliteMethod::*;
-    use MethodResult::*;
-    use Task::*;
+
 
 
     let is_instrument_powered_on = !state.power_avail.get(&satellite).unwrap();
 
-    if pointing_helper(state,&satellite, &new_direction){ //Prevents short circuiting of the and from earlier
+    if is_satellite_pointing_in_direction(state, &satellite, &new_direction){ //Prevents short circuiting of the and from earlier
          if is_instrument_powered_on || state.power_on.is_empty(){
-            return TaskLists(vec![vec![Method(Switching(satellite, instrument)),
-                                Operator(Calibrate(satellite, instrument, new_direction)),
-                                Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+            return schedule_pointing_with_powered_on_instruments(satellite, instrument, mode, new_direction)
         } else {
-            match find_powered_on_instruments(state, &satellite) {
-                Some(instrument_to_power_off) => TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, satellite)),
-                                                                     Method(Switching(satellite, instrument)),
-                                                                     Operator(Calibrate(satellite, instrument, new_direction)),
-                                                                     Operator(TakeImage(satellite, new_direction, instrument, mode))]]),
-                None => TaskLists(vec![vec![Method(Switching(satellite, instrument)),
-                                            Operator(Calibrate(satellite, instrument, new_direction)),
-                                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
-            }
+             return schedule_pointing_with_powered_off_instruments(state, &satellite, instrument, mode, new_direction)
 
         }
     }else{
         if is_instrument_powered_on || state.power_on.is_empty(){
             let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
-
-            TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
-                                Method(Switching(satellite, instrument)),
-                                Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
-                                Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
-                                Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+            return schedule_not_pointing_with_powered_on_instruments(satellite, instrument, mode, new_direction, previous_direction, calibration_target_direction)
         }else{
             let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
-            match find_powered_on_instruments(state, &satellite){
-                Some(instrument_to_power_off) => TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, satellite)),
-                                                                     Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
-                                                                     Method(Switching(satellite, instrument)),
-                                                                     Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
-                                                                     Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
-                                                                     Operator(TakeImage(satellite, new_direction, instrument, mode))]]),
-                None => TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
-                                            Method(Switching(satellite, instrument)),
-                                            Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
-                                            Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
-                                            Operator(TakeImage(satellite, new_direction, instrument, mode))]]),
-            }
+            return schedule_not_pointing_with_powered_off_instruments(state, &satellite, instrument, mode, new_direction, previous_direction, calibration_target_direction)
         }
 
+    }
+}
+
+fn schedule_not_pointing_with_powered_off_instruments(state: &SatelliteState, satellite: &SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, calibration_target_direction: &SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
+    match find_powered_on_instruments(state, &satellite) {
+        Some(instrument_to_power_off) => TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                                             Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+                                                             Method(Switching(*satellite, instrument)),
+                                                             Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                                             Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
+                                                             Operator(TakeImage(*satellite, new_direction, instrument, mode))]]),
+        None => TaskLists(vec![vec![Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+                                    Method(Switching(*satellite, instrument)),
+                                    Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                    Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
+                                    Operator(TakeImage(*satellite, new_direction, instrument, mode))]]),
+    }
+}
+
+fn schedule_not_pointing_with_powered_on_instruments(satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, calibration_target_direction: &SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
+    TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
+                        Method(Switching(satellite, instrument)),
+                        Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                        Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
+                        Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+}
+
+fn schedule_pointing_with_powered_on_instruments(satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
+    TaskLists(vec![vec![Method(Switching(satellite, instrument)),
+                        Operator(Calibrate(satellite, instrument, new_direction)),
+                        Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+}
+
+fn schedule_pointing_with_powered_off_instruments(state: &SatelliteState, satellite: &SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
+    match find_powered_on_instruments(state, &satellite) {
+        Some(instrument_to_power_off) => TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                                             Method(Switching(*satellite, instrument)),
+                                                             Operator(Calibrate(*satellite, instrument, new_direction)),
+                                                             Operator(TakeImage(*satellite, new_direction, instrument, mode))]]),
+        None => TaskLists(vec![vec![Method(Switching(*satellite, instrument)),
+                                    Operator(Calibrate(*satellite, instrument, new_direction)),
+                                    Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
     }
 }
 
@@ -133,7 +150,7 @@ fn find_powered_on_instruments(state: &SatelliteState, satellite: &SatelliteEnum
 
 
 
-fn pointing_helper(state: &SatelliteState, satellite: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
+fn is_satellite_pointing_in_direction(state: &SatelliteState, satellite: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
     return match state.pointing.get(satellite) {
         Some(x) => x == direction, //If we have the correct instrument selected, we need to make sure that it is selected at the right direction.
         None => false, //If the lookup fails, the if statement should fail.
