@@ -62,9 +62,9 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
     use SatelliteMethod::*;
     use MethodResult::*;
     use Task::*;
-    
 
-    let is_instrument_powered_on = state.power_on.contains(&instrument);
+
+    let is_instrument_powered_on = !state.power_avail.get(&satellite).unwrap();
 
     if pointing_helper(state,&satellite, &new_direction){ //Prevents short circuiting of the and from earlier
          if is_instrument_powered_on || state.power_on.is_empty(){
@@ -72,12 +72,12 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
                                 Operator(Calibrate(satellite, instrument, new_direction)),
                                 Operator(TakeImage(satellite, new_direction, instrument, mode))]])
         } else {
-            let last_instrument = state.power_on[state.power_on.len() - 1];
+            let instrument_to_power_off = find_powered_on_instruments(state, &satellite).unwrap();
 
-            return TaskLists(vec![vec![Operator(SwitchOff(last_instrument, satellite)),
-                                Method(Switching(satellite, instrument)),
-                                Operator(Calibrate(satellite, instrument, new_direction)),
-                                Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+            return TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, satellite)),
+                                       Method(Switching(satellite, instrument)),
+                                       Operator(Calibrate(satellite, instrument, new_direction)),
+                                       Operator(TakeImage(satellite, new_direction, instrument, mode))]])
         }
     }else{
         if is_instrument_powered_on || state.power_on.is_empty(){
@@ -90,10 +90,10 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
                                 Operator(TakeImage(satellite, new_direction, instrument, mode))]])
         }else{
             let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
-            let last_instrument = state.power_on[state.power_on.len()-1];
+            let instrument_to_power_off = find_powered_on_instruments(state, &satellite).unwrap();
 
 
-            TaskLists(vec![vec![Operator(SwitchOff(last_instrument, satellite)),
+            TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, satellite)),
                                 Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
                                 Method(Switching(satellite, instrument)),
                                 Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
@@ -103,6 +103,16 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
 
     }
 }
+
+fn find_powered_on_instruments(state: &SatelliteState, satellite: &SatelliteEnum) -> Option<SatelliteEnum>{
+    for onboard_instrument in state.onboard.keys().into_iter(){
+        if state.power_on.contains(onboard_instrument){
+            return Some(onboard_instrument.clone());
+        }
+    }
+    return None;
+}
+
 
 fn pointing_helper(state: &SatelliteState, satellite: &SatelliteEnum, direction: &SatelliteEnum) -> bool {
     return match state.pointing.get(satellite) {
