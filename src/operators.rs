@@ -92,6 +92,7 @@ impl SatelliteState {
             self.turn_to_helper(satellite, (slew_time), new_direction, previous_direction);
             return true;
         }else {
+            println!("!!!Turn_to failed!");
             return false;
         }
     }
@@ -132,15 +133,16 @@ impl SatelliteState {
             self.power_avail.insert(*satellite, false);
             return true;
         } else {
+            println!("!!!Switch_on failed");
             println!("!!!Our power_available is {:?}", self.power_avail);
-            println!("!!!Our current satellite is: {:?}", satellite);
+            println!("!!!Our current satellite is: {:?}. It has the instruments: {:?}", satellite, self.onboard.get(satellite).unwrap());
             return false;
         }
     }
     pub fn switch_off(&mut self, instrument: &SatelliteEnum, satellite: &SatelliteEnum) -> bool {
-        println!("!!!Our onboard is: {:?}", self.onboard);
-        println!("!!!Our power on is: {:?}", self.power_on);
-        println!("!!!Our instrument is: {:?}, our satellite is: {:?}", instrument, satellite);
+        // println!("!!!Our onboard is: {:?}", self.onboard);
+        // println!("!!!Our power on is: {:?}", self.power_on);
+        // println!("!!!Our instrument is: {:?}, our satellite is: {:?}", instrument, satellite);
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_on.contains(instrument) {
             //Remove instrument from the power on
             if self.power_on.contains(instrument) {
@@ -150,7 +152,9 @@ impl SatelliteState {
             self.power_avail.insert(*satellite, true);
             return true;
         } else {
-            println!("Power off failed!");
+            println!("!!!Power off failed!");
+            println!("!!!Satellite has instrument? {:?} ", self.onboard.get(satellite).unwrap().contains(instrument));
+            println!("!!!power_on? {:?}", self.power_on.contains(instrument));
             return false;
         }
     }
@@ -196,6 +200,7 @@ impl SatelliteState {
             self.total_data_stored = old_capacity; //add old_capacity
             return true;
         } else {
+            println!("!!!Take image failed");
             return false;
         }
     }

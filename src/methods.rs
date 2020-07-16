@@ -62,6 +62,7 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
     use SatelliteMethod::*;
     use MethodResult::*;
     use Task::*;
+    
 
     let is_instrument_powered_on = state.power_on.contains(&instrument);
 
@@ -163,11 +164,18 @@ fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum)  -> Opti
 
 fn brute_force_satellite(state: &SatelliteState, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> Option<SatelliteEnum> {
     for satellites in state.onboard.keys() {
-        if state.does_instrument_support_mode(instrument, mode){
+        if state.does_instrument_support_mode(instrument, mode)&& is_onboard(state, satellites.clone(), instrument.clone()){
             return Some(satellites.clone());
         }
     }
     return None;
+}
+
+fn is_onboard(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum) -> bool{
+    match state.onboard.get(&satellite){
+        Some(n) => n.contains(&instrument),
+        None => false,
+    }
 }
 
 impl Method for SatelliteMethod {
