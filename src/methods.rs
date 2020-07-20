@@ -67,8 +67,16 @@ fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: Satel
                      Operator(SwitchOn(instrument, satellite))],
 
 
-            None =>         vec![Operator(SwitchOff(instrument, satellite)),
-                                 Operator(SwitchOn(instrument, satellite))],
+            None =>
+                {
+                    if state.power_on.contains(&instrument){
+                        vec![Operator(SwitchOff(instrument, satellite)),
+                             Operator(SwitchOn(instrument, satellite))]
+                    }else{
+                        vec![Operator(SwitchOn(instrument, satellite))]
+                    }
+
+                }
         }
     } else if state.power_on.is_empty() {
         vec![Operator(SwitchOn(instrument, satellite))]
