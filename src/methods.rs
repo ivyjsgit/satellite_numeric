@@ -37,7 +37,7 @@ impl SatelliteStatus {
         }
     }
 }
-
+//Checks to see if the planner is done by comparing the state and the goal.
 pub fn is_satellite_done(state: SatelliteState, goal: &SatelliteGoals) -> bool {
     for goal_image in goal.have_image.keys() {
         if !state.have_image.contains_key(goal_image) {
@@ -51,6 +51,7 @@ pub fn is_satellite_done(state: SatelliteState, goal: &SatelliteGoals) -> bool {
     return true;
 }
 
+//Turn an instrument on or off.
 fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     TaskLists(vec![if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
         let powered_on_instrument = find_powered_on_instruments(state, &satellite);
@@ -76,11 +77,8 @@ fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: Satel
     }])
 
 }
-
+//Schedules one step into the planner.
 fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
-
-
-
     let is_instrument_powered_on = !state.power_avail.get(&satellite).unwrap();
 
     if is_satellite_pointing_in_direction(state, &satellite, &new_direction){ //Prevents short circuiting of the and from earlier
@@ -153,12 +151,13 @@ fn schedule_pointing_with_powered_off_instruments(state: &SatelliteState, satell
     }
 }
 
+//Given a state, and a Satellite::SatelliteEnum, return an Instrument::Maybe<SatelliteEnum> containing any powered on instruments owned by the satellite.
 fn find_powered_on_instruments(state: &SatelliteState, satellite: &SatelliteEnum) -> Option<SatelliteEnum>{
     println!("!!!Attempting to search the following {:?} ", state.onboard);
-    for onboard_instrument_array in state.onboard.get(satellite) {
-        for onboard_instrument in onboard_instrument_array.into_iter() {
+    for onboard_instrument_array in state.onboard.get(satellite) { //Get the instrument array for the satellite
+        for onboard_instrument in onboard_instrument_array.into_iter() { //Loop over the instruments
             println!("Seeing if contains: {:?}", onboard_instrument);
-            if state.power_on.contains(onboard_instrument) {
+            if state.power_on.contains(onboard_instrument) { //Check if the instrument is powered on
                 return Some(onboard_instrument.clone());
             }
         }
@@ -205,18 +204,20 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
     };
 }
 
+//This function makes sure that the state's pointing matches the goal's pointing.
 fn does_pass_pointing_check (state: &SatelliteState, goal: &SatelliteGoals) -> bool{
     for satellite in goal.pointing.keys(){
         let gotten_direction = state.pointing.get(satellite);
         if gotten_direction == None{
-            return false;
+            return false; //If the direction is missing from the state, then there can't possibly be a match.
         }else if gotten_direction != goal.pointing.get(satellite){
-            return false;
+            return false; //If there is no match, then there is no match.
         }
     }
     return true;
 }
 
+//This method returns a Maybe<Instrument> from a state, and a mode.
 fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum)  -> Option<SatelliteEnum> {
     for instrument in state.supports.keys(){
         if state.supports.get(instrument)?.contains(mode){
@@ -226,6 +227,7 @@ fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum)  -> Opti
     return None;
 }
 
+//This method returns a Satellite::Maybe<SatelliteEnum> from a state, an instrument and a mode.
 fn brute_force_satellite(state: &SatelliteState, instrument: &SatelliteEnum, mode: &SatelliteEnum) -> Option<SatelliteEnum> {
     for satellites in state.onboard.keys() {
         if state.does_instrument_support_mode(instrument, mode)&& is_onboard(state, satellites.clone(), instrument.clone()){
