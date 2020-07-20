@@ -56,8 +56,16 @@ fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: Satel
         let powered_on_instrument = find_powered_on_instruments(state, &satellite);
         println!("!!!our powered_on instrument is: {:?}", powered_on_instrument);
         match powered_on_instrument{
-            Some(n)=>        vec![Operator(SwitchOff(n, satellite)),
-                                  Operator(SwitchOn(instrument, satellite))],
+            Some(n) => println!("?!?!?Performing switchoff on SwitchOff({:?}, {:?})",n, satellite ),
+            None => println!("?!?!?None"),
+
+        }
+        match powered_on_instrument{
+
+            Some(n)=> vec![Operator(SwitchOff(n, satellite)),
+                     Operator(SwitchOn(instrument, satellite))],
+
+
             None =>         vec![Operator(SwitchOff(instrument, satellite)),
                                  Operator(SwitchOn(instrument, satellite))],
         }
@@ -66,6 +74,7 @@ fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: Satel
     } else {
         vec![]
     }])
+
 }
 
 fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
@@ -98,7 +107,9 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
 }
 
 fn schedule_not_pointing_with_powered_off_instruments(state: &SatelliteState, satellite: &SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, calibration_target_direction: &SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
-    println!("?!?!? find_powered_on{:?}", find_powered_on_instruments(state, &satellite));
+    println!("?!?!? Our found powered on instrument is  is {:?}", find_powered_on_instruments(state, &satellite));
+    println!("Our satellite is {:?}", satellite);
+
     match find_powered_on_instruments(state, &satellite) {
         Some(instrument_to_power_off) => {
             TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
@@ -144,7 +155,7 @@ fn schedule_pointing_with_powered_off_instruments(state: &SatelliteState, satell
 
 fn find_powered_on_instruments(state: &SatelliteState, satellite: &SatelliteEnum) -> Option<SatelliteEnum>{
     println!("!!!Attempting to search the following {:?} ", state.onboard);
-    for onboard_instrument_array in state.onboard.values() {
+    for onboard_instrument_array in state.onboard.get(satellite) {
         for onboard_instrument in onboard_instrument_array.into_iter() {
             println!("Seeing if contains: {:?}", onboard_instrument);
             if state.power_on.contains(onboard_instrument) {
