@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use anyhop::{Atom, Operator};
 use strum_macros::*;
 use fixed::types::I40F24;
+use log::{debug, error, info, trace, warn};
 
 
 use crate::methods::SatelliteStatus;
@@ -92,7 +93,7 @@ impl SatelliteState {
             self.turn_to_helper(satellite, (slew_time), new_direction, previous_direction);
             return true;
         }else {
-            println!("!!!Turn_to failed!");
+            warn!("Turn_to failed!");
             return false;
         }
     }
@@ -133,16 +134,16 @@ impl SatelliteState {
             self.power_avail.insert(*satellite, false);
             return true;
         } else {
-            println!("!!!Switch_on failed");
-            println!("!!!Our power_available is {:?}", self.power_avail);
-            println!("!!!Our current satellite is: {:?}. It has the instruments: {:?}", satellite, self.onboard.get(satellite).unwrap());
+            warn!("Switch_on failed");
+            warn!("Our power_available is {:?}", self.power_avail);
+            warn!("Our current satellite is: {:?}. It has the instruments: {:?}", satellite, self.onboard.get(satellite).unwrap());
             return false;
         }
     }
     pub fn switch_off(&mut self, instrument: &SatelliteEnum, satellite: &SatelliteEnum) -> bool {
-        // println!("!!!Our onboard is: {:?}", self.onboard);
-        // println!("!!!Our power on is: {:?}", self.power_on);
-        // println!("!!!Our instrument is: {:?}, our satellite is: {:?}", instrument, satellite);
+        debug!("Our onboard is: {:?}", self.onboard);
+        debug!("Our power on is: {:?}", self.power_on);
+        debug!("Our instrument is: {:?}, our satellite is: {:?}", instrument, satellite);
         if self.onboard.get(satellite).unwrap().contains(instrument) && self.power_on.contains(instrument) {
             //Remove instrument from the power on
             if self.power_on.contains(instrument) {
@@ -152,9 +153,9 @@ impl SatelliteState {
             self.power_avail.insert(*satellite, true);
             return true;
         } else {
-            println!("!!!Power off failed!");
-            println!("!!!Satellite has instrument? {:?} ", self.onboard.get(satellite).unwrap().contains(instrument));
-            println!("!!!power_on? {:?}", self.power_on.contains(instrument));
+            warn!("Power off failed!");
+            warn!("Satellite has instrument? {:?} ", self.onboard.get(satellite).unwrap().contains(instrument));
+            warn!("power_on? {:?}", self.power_on.contains(instrument));
             return false;
         }
     }
@@ -166,9 +167,10 @@ impl SatelliteState {
             self.calibrated.push(instrument_clone);
             return true;
         } else {
-            println!("!!!onboard: {:?} calibrate: {:?}, pointing: {:?}, power_on: {:?}", self.onboard.get(satellite).unwrap().contains(instrument), self.calibrate_helper(&instrument, &direction), self.pointing_helper(satellite, direction),self.power_on.contains(instrument) );
-            println!("!!!our power_on is as such: {:?}", self.power_on);
-            println!("Our instrument is: {:?}", instrument);
+            warn!("Calibration failed!");
+            warn!("onboard: {:?} calibrate: {:?}, pointing: {:?}, power_on: {:?}", self.onboard.get(satellite).unwrap().contains(instrument), self.calibrate_helper(&instrument, &direction), self.pointing_helper(satellite, direction),self.power_on.contains(instrument) );
+            warn!("our power_on is as such: {:?}", self.power_on);
+            warn!("Our instrument is: {:?}", instrument);
             return false;
         }
     }
@@ -200,7 +202,7 @@ impl SatelliteState {
             self.total_data_stored = old_capacity; //add old_capacity
             return true;
         } else {
-            println!("!!!Take image failed");
+            warn!("Take image failed");
             return false;
         }
     }

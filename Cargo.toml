@@ -7,9 +7,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhop = {git = "https://github.com/gjf2a/anyhop"}
+#anyhop = {git = "https://github.com/gjf2a/anyhop"}
+anyhop={path="/home/ivy/Desktop/Rust/anyhop"}
 pddl_problem_parser = {git = "https://github.com/gjf2a/pddl_problem_parser"}
 io-error = "0.1.1"
 strum = "0.13.0"
 strum_macros = "0.13.0"
 fixed = "1.0.0"
+fern = "0.6.0"
+log = "0.4.11"
+chrono = "0.4.13"

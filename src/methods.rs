@@ -3,6 +3,8 @@ use anyhop::MethodResult::{PlanFound, TaskLists};
 use anyhop::Task::Operator;
 use MethodResult::*;
 use Task::*;
+use log::{debug, error, info, trace, warn};
+
 
 use SatelliteMethod::*;
 
@@ -55,10 +57,10 @@ pub fn is_satellite_done(state: SatelliteState, goal: &SatelliteGoals) -> bool {
 fn switching(state: &SatelliteState, satellite: SatelliteEnum, instrument: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     TaskLists(vec![if !state.power_on.is_empty() && !state.power_on.contains(&instrument) {
         let powered_on_instrument = find_powered_on_instruments(state, &satellite);
-        println!("!!!our powered_on instrument is: {:?}", powered_on_instrument);
+        debug!("Our powered_on instrument is: {:?}", powered_on_instrument);
         match powered_on_instrument{
-            Some(n) => println!("?!?!?Performing switchoff on SwitchOff({:?}, {:?})",n, satellite ),
-            None => println!("?!?!?None"),
+            Some(n) => debug!("Performing switchoff on SwitchOff({:?}, {:?})",n, satellite ),
+            None => debug!("None"),
 
         }
         match powered_on_instrument{
@@ -91,20 +93,20 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
 
     if is_satellite_pointing_in_direction(state, &satellite, &new_direction){ //Prevents short circuiting of the and from earlier
          if is_instrument_powered_on || state.power_on.is_empty(){
-             println!("???Scheduling pointing with on instruments");
+             debug!("Scheduling pointing with on instruments");
             return schedule_pointing_with_powered_on_instruments(satellite, instrument, mode, new_direction)
         } else {
-             println!("???Scheduling pointing with off instruments");
+             debug!("Scheduling pointing with off instruments");
              return schedule_pointing_with_powered_off_instruments(state, &satellite, instrument, mode, new_direction)
 
         }
     }else{
         if is_instrument_powered_on || state.power_on.is_empty(){
-            println!("???Scheduling no pointing with on instruments");
+            debug!("Scheduling no pointing with on instruments");
             let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
             return schedule_not_pointing_with_powered_on_instruments(satellite, instrument, mode, new_direction, previous_direction, calibration_target_direction)
         }else{
-            println!("???Scheduling no pointing with off instruments");
+            debug!("Scheduling no pointing with off instruments");
             let calibration_target_direction = state.calibration_target.get(&instrument).unwrap();
             return schedule_not_pointing_with_powered_off_instruments(state, &satellite, instrument, mode, new_direction, previous_direction, calibration_target_direction)
         }
@@ -113,8 +115,8 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
 }
 
 fn schedule_not_pointing_with_powered_off_instruments(state: &SatelliteState, satellite: &SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, calibration_target_direction: &SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
-    println!("?!?!? Our found powered on instrument is  is {:?}", find_powered_on_instruments(state, &satellite));
-    println!("Our satellite is {:?}", satellite);
+    debug!("Our found powered on instrument is  is {:?}", find_powered_on_instruments(state, &satellite));
+    debug!("Our satellite is {:?}", satellite);
 
     match find_powered_on_instruments(state, &satellite) {
         Some(instrument_to_power_off) => {
@@ -161,10 +163,10 @@ fn schedule_pointing_with_powered_off_instruments(state: &SatelliteState, satell
 
 //Given a state, and a Satellite::SatelliteEnum, return an Instrument::Maybe<SatelliteEnum> containing any powered on instruments owned by the satellite.
 fn find_powered_on_instruments(state: &SatelliteState, satellite: &SatelliteEnum) -> Option<SatelliteEnum>{
-    println!("!!!Attempting to search the following {:?} ", state.onboard);
+    debug!("Attempting to search the following {:?} ", state.onboard);
     for onboard_instrument_array in state.onboard.get(satellite) { //Get the instrument array for the satellite
         for onboard_instrument in onboard_instrument_array.into_iter() { //Loop over the instruments
-            println!("Seeing if contains: {:?}", onboard_instrument);
+            debug!("Seeing if contains: {:?}", onboard_instrument);
             if state.power_on.contains(onboard_instrument) { //Check if the instrument is powered on
                 return Some(onboard_instrument.clone());
             }
@@ -280,9 +282,9 @@ impl Goal for SatelliteGoals {
             let state_instrument = state.have_image.get(location);
 
             if state_instrument == None || state_instrument != Some(instrument) {
-                println!("!!!We have failed the have_image checker!");
-                println!("!!!Goal have_image: {:?}", self.have_image);
-                println!("!!!Actual have_image: {:?}", state.have_image);
+                warn!("We have failed the have_image checker!");
+                warn!("Goal have_image: {:?}", self.have_image);
+                warn!("Actual have_image: {:?}", state.have_image);
                 return false;
             }
         }
@@ -291,13 +293,13 @@ impl Goal for SatelliteGoals {
             let state_direction = state.pointing.get(satellite);
 
             if state_direction == None || state_direction != Some(direction){
-                println!("We have failed the pointing checker!");
-                println!("!!!Goal pointing: {:?}", self.pointing);
-                println!("!!!Actual pointing: {:?}", state.pointing);
+                warn!("We have failed the pointing checker!");
+                warn!("Goal pointing: {:?}", self.pointing);
+                warn!("Actual pointing: {:?}", state.pointing);
                 return false;
             }
         }
-        println!("This plan has been accepted by the checker!");
+        info!("This plan has been accepted by the checker!");
         return true;
     }
 }

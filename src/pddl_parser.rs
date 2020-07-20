@@ -2,6 +2,8 @@ use std::{fs, io};
 use std::collections::{BTreeMap, HashMap};
 use std::process::exit;
 use std::rc::{self, Rc};
+use log::{debug, error, info, trace, warn};
+
 
 use pddl_problem_parser::{Predicate, PddlProblem};
 use crate::operators::{SatelliteEnum, SatelliteGoals, SatelliteState};
@@ -14,15 +16,14 @@ pub fn make_satellite_problem_from(pddl_file: &str) -> io::Result<(SatelliteStat
 
     let objects = enumerate_objects(&parsed);
 
-    println!("objects {:?}", objects);
+    info!("objects {:?}", objects);
 
     let satellite_state = extract_state(&parsed,&objects);
 
     let goals = extract_goals(&parsed, &objects);
 
 
-
-        return Ok((satellite_state, goals));
+    return Ok((satellite_state, goals));
 }
 
 fn enumerate_objects(parsed: &PddlProblem) -> BTreeMap<String,I40F24> {
@@ -72,7 +73,6 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> Sat
             let decoded_pointing = decode_pointing(&pred, &objects);
             pointing.insert(Satellite(decoded_pointing.0), Direction(decoded_pointing.1));
         }else if pred.get_tag() == "power_avail" {
-            println!("!!!!!!power is available!!!");
             let satellite = Satellite(*objects.get(pred.get_arg(0)).unwrap());
             power_avail.insert(satellite, true);
         }else if pred.get_tag() == "power_on" {
