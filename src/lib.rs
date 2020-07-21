@@ -7,7 +7,6 @@ extern crate io_error;
 extern crate strum;
 extern crate strum_macros;
 extern crate fixed;
-extern crate fern;
 extern crate log;
 
 pub mod methods;

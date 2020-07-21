@@ -299,7 +299,7 @@ impl Goal for SatelliteGoals {
                 return false;
             }
         }
-        info!("This plan has been accepted by the checker!");
+        debug!("This plan has been accepted by the checker!");
         return true;
     }
 }
