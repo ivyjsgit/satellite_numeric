@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use anyhop::{Atom, Operator};
+use anyhop::{Atom, Operator, CmdArgs};
 use strum_macros::*;
 use fixed::types::I40F24;
 use log::{debug, error, info, trace, warn};
@@ -107,12 +107,18 @@ impl SatelliteState {
 
 
     fn turn_to_helper(&mut self, satellite: &SatelliteEnum, x: I40F24, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
-
-        if self.fuel.get(satellite).unwrap() >= &x {
+        let cmdArgs = CmdArgs::new().unwrap();
+        let is_strips = cmdArgs.has_tag("strips");
+        if !is_strips{
+            if self.fuel.get(satellite).unwrap() >= &x {
                 self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel.get(satellite).unwrap() - I40F24::from_num(1)));
                 self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel_used + I40F24::from_num(1)));
                 self.pointing.insert(satellite.clone(),new_direction.clone());
+            }
+        }else{
+            self.pointing.insert(satellite.clone(),new_direction.clone());
         }
+
     }
     fn switch_on(&mut self, instrument: &SatelliteEnum, satellite: &SatelliteEnum) -> bool {
         //precondition
