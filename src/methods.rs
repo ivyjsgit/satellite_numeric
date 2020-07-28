@@ -209,8 +209,10 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
 
     return if goal.have_image.keys().eq(&completed_tasks) && does_pass_pointing_check(state, goal){
         PlanFound
-    } else {
+    } else if tasks.len()>0{
         TaskLists(tasks)
+    }else{
+        Failure
     };
 }
 
