@@ -1,5 +1,5 @@
 use anyhop::{Atom, Goal, Method, MethodResult, Task};
-use anyhop::MethodResult::{PlanFound, TaskLists};
+use anyhop::MethodResult::{TaskLists};
 use anyhop::Task::Operator;
 use MethodResult::*;
 use Task::*;
@@ -208,10 +208,10 @@ fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<S
     }
 
     return if goal.have_image.keys().eq(&completed_tasks) && does_pass_pointing_check(state, goal){
-        PlanFound
-    } else if tasks.len()>0{
+        TaskLists(vec![])
+    }else if tasks.len()>0{
         TaskLists(tasks)
-    }else{
+    }else {
         Failure
     };
 }

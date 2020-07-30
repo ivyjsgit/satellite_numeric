@@ -107,8 +107,8 @@ impl SatelliteState {
 
 
     fn turn_to_helper(&mut self, satellite: &SatelliteEnum, x: I40F24, new_direction: &SatelliteEnum, previous_direction: &SatelliteEnum) {
-        let cmdArgs = CmdArgs::new().unwrap();
-        let is_strips = cmdArgs.has_tag("strips");
+        let cmd_args = CmdArgs::new().unwrap();
+        let is_strips = cmd_args.has_tag("strips");
         if !is_strips{
             if self.fuel.get(satellite).unwrap() >= &x {
                 self.set_slew_time(new_direction, previous_direction, I40F24::from_num(self.fuel.get(satellite).unwrap() - I40F24::from_num(1)));
