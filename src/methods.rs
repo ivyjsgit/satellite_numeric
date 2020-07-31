@@ -12,6 +12,7 @@ use crate::methods::SatelliteMethod::{ScheduleAll, ScheduleOne};
 use crate::operators::SatelliteOperator::{Calibrate, SwitchOff, SwitchOn, TakeImage, TurnTo};
 
 use super::operators::*;
+use fixed::types::I40F24;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Ord, Eq, Debug)]
 pub enum SatelliteMethod {
@@ -275,6 +276,7 @@ impl Goal for SatelliteGoals {
     type O = SatelliteOperator<SatelliteEnum>;
     type M = SatelliteMethod;
     type S = SatelliteState;
+    type C = I40F24;
 
     fn starting_tasks(&self) -> Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>> {
         vec![Task::Method(SatelliteMethod::ScheduleAll)]
@@ -303,6 +305,17 @@ impl Goal for SatelliteGoals {
         }
         debug!("This plan has been accepted by the checker!");
         return true;
+    }
+
+    fn distance_from(&self, state: &Self::S) -> Self::C {
+        let mut unvisited = 0;
+        for goal_image in self.have_image.keys(){
+            //If we haven't visited the image, add it to the unvisited count.
+            if state.have_image.get(goal_image)!=self.have_image.get(goal_image){
+                unvisited+=1;
+            }
+        }
+        return I40F24::from_num(unvisited);
     }
 }
 

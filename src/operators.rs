@@ -268,6 +268,16 @@ pub enum SatelliteOperator<SatelliteEnum> {
 
 impl Operator for SatelliteOperator<SatelliteEnum> {
     type S = SatelliteState;
+    type C = I40F24;
+    type G = SatelliteGoals;
+
+    fn cost(&self, state: &Self::S, goal: &Self::G) -> Self::C {
+        return I40F24::from_num(1);
+    }
+
+    fn zero_cost() -> Self::C {
+        return I40F24::from_num(0);
+    }
 
     fn attempt_update(&self, state: &mut SatelliteState) -> bool {
         use SatelliteOperator::*;
