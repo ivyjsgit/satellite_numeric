@@ -309,13 +309,20 @@ impl Goal for SatelliteGoals {
 
     fn distance_from(&self, state: &Self::S) -> Self::C {
         let mut unvisited = 0;
+        let mut num_turns = 0;
         for goal_image in self.have_image.keys(){
             //If we haven't visited the image, add it to the unvisited count.
             if state.have_image.get(goal_image)!=self.have_image.get(goal_image){
                 unvisited+=1;
             }
         }
-        return I40F24::from_num(unvisited);
+        for goal_pointing in self.pointing.keys(){
+            if state.pointing.get(goal_pointing)!=self.pointing.get(goal_pointing){
+                num_turns+=1;
+            }
+        }
+
+        return I40F24::from_num(unvisited+num_turns);
     }
 }
 
