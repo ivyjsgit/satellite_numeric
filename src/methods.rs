@@ -116,32 +116,79 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
 }
 
 fn schedule_not_pointing_with_powered_off_instruments(state: &SatelliteState, satellite: &SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, calibration_target_direction: &SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
-    debug!("Our found powered on instrument is  is {:?}", find_powered_on_instruments(state, &satellite));
+    let powered_on_instrument= find_powered_on_instruments(state, &satellite);
+    debug!("Our found powered on instrument is  is {:?}", instrument);
     debug!("Our satellite is {:?}", satellite);
 
-    match find_powered_on_instruments(state, &satellite) {
-        Some(instrument_to_power_off) => {
-            TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
-                                                             Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
-                                                             Method(Switching(*satellite, instrument)),
-                                                             Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
-                                                             Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
-                                                             Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
-        },
-        None => TaskLists(vec![vec![Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+    match powered_on_instrument {
+        Some(instrument_to_power_off) =>
+            {
+                if calibration_target_direction == &previous_direction && &new_direction == calibration_target_direction{
+                    TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                        Method(Switching(*satellite, instrument)),
+                                        Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                        Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+
+                } else if calibration_target_direction == &previous_direction {
+                    TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                        Method(Switching(*satellite, instrument)),
+                                        Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                        Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
+                                        Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+                } else if &new_direction==calibration_target_direction {
+                    TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                        Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+                                        Method(Switching(*satellite, instrument)),
+                                        Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                        Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+                }else{
+                TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                    Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
                                     Method(Switching(*satellite, instrument)),
                                     Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
                                     Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
-                                    Operator(TakeImage(*satellite, new_direction, instrument, mode))]]),
+                                    Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+            }
+        },
+        None =>   if &new_direction==calibration_target_direction || new_direction==previous_direction{
+            TaskLists(vec![vec![Method(Switching(*satellite, instrument)),
+                                Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+        }else{
+            TaskLists(vec![vec![Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+                                Method(Switching(*satellite, instrument)),
+                                Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
+                                Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+        },
     }
 }
 
 fn schedule_not_pointing_with_powered_on_instruments(satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, calibration_target_direction: &SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
-    TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
-                        Method(Switching(satellite, instrument)),
-                        Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
-                        Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
-                        Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+    if calibration_target_direction == &previous_direction && &new_direction==calibration_target_direction{
+        TaskLists(vec![vec![Method(Switching(satellite, instrument)),
+                            Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+    }else if calibration_target_direction == &previous_direction{
+        TaskLists(vec![vec![Method(Switching(satellite, instrument)),
+                            Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                            Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
+                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+
+    }else if &new_direction==calibration_target_direction{
+        TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
+                            Method(Switching(satellite, instrument)),
+                            Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+
+    }else{
+        debug!("Taking the dangerous way!");
+        TaskLists(vec![vec![Operator(TurnTo(satellite, *calibration_target_direction, previous_direction)),
+                            Method(Switching(satellite, instrument)),
+                            Operator(Calibrate(satellite, instrument, *calibration_target_direction)),
+                            Operator(TurnTo(satellite, new_direction, *calibration_target_direction)),
+                            Operator(TakeImage(satellite, new_direction, instrument, mode))]])
+    }
 }
 
 fn schedule_pointing_with_powered_on_instruments(satellite: SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
@@ -188,35 +235,44 @@ fn is_satellite_pointing_in_direction(state: &SatelliteState, satellite: &Satell
 fn schedule_all(state: &SatelliteState, goal: &SatelliteGoals) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     let mut tasks: Vec<Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>>> = vec![];
     let mut completed_tasks: Vec<SatelliteEnum> = vec![];
-
     for goal_image in goal.have_image.keys() {
-
         if !(state.have_image.get(goal_image) == goal.have_image.get(goal_image)) {
             let goal_image_clone = goal_image.clone();
             let mode = goal.have_image.get(goal_image).unwrap();
             let instrument = brute_force_instrument(state, mode).unwrap(); //First look up the goal image to see which mode it should be in, and then look up which mode it should be in.
             let new_direction = goal_image_clone;
-
             let satellite = brute_force_satellite(state, &instrument, mode).unwrap();
             let previous_direction = state.pointing.get(&satellite.clone()).unwrap();
-
             tasks.push(vec![Task::Method(ScheduleOne(satellite, instrument, mode.clone(), new_direction, previous_direction.clone())), Task::Method(ScheduleAll)]);
         } else {
             let image_clone = goal_image.clone();
             completed_tasks.push(image_clone);
         }
-
     }
-
-    return if goal.have_image.keys().eq(&completed_tasks) && does_pass_pointing_check(state, goal){
-        TaskLists(vec![])
+    return if goal.have_image.keys().eq(&completed_tasks) {
+        let pointing_tasks = pointing_needed(state, goal).iter()
+            .map(|(sat, dir)| Task::Operator(TurnTo(*sat, *dir, *state.pointing.get(sat).unwrap())))
+            .collect();
+        TaskLists(vec![pointing_tasks])
     }else if tasks.len()>0{
         TaskLists(tasks)
     }else {
+        debug!("ScheduleAll is returning failure");
+        debug!("completed_tasks: {:?}", completed_tasks);
+        debug!("goals:           {:?}", goal.have_image.keys());
+        debug!("goal.pointing:   {:?}", goal.pointing);
+        for satellite in state.pointing.iter() {
+            debug!("pointing: {:?}", satellite);
+        }
         Failure
     };
 }
-
+fn pointing_needed(state: &SatelliteState, goal: &SatelliteGoals) -> Vec<(SatelliteEnum,SatelliteEnum)> {
+    goal.pointing.iter()
+        .map(|(sat, dir)| (*sat, *dir))
+        .filter(|(sat, dir)| dir != state.pointing.get(&sat).unwrap())
+        .collect()
+}
 //This function makes sure that the state's pointing matches the goal's pointing.
 fn does_pass_pointing_check (state: &SatelliteState, goal: &SatelliteGoals) -> bool{
     for satellite in goal.pointing.keys(){

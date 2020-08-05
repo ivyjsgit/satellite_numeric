@@ -93,7 +93,10 @@ impl SatelliteState {
             self.turn_to_helper(satellite, (slew_time), new_direction, previous_direction);
             return true;
         }else {
-            warn!("Turn_to failed!");
+            info!("Turn_to failed!");
+            debug!("Pointing helper: {}", self.pointing_helper(satellite, previous_direction));
+            debug!("Direction check: {}", (new_direction != previous_direction) );
+
             return false;
         }
     }
