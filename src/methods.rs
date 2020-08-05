@@ -115,11 +115,21 @@ fn schedule_one(state: &SatelliteState, satellite: SatelliteEnum, instrument: Sa
     }
 }
 
+// New function
+fn remove_redundant_turns(tasks: Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>>) -> Vec<Task<SatelliteOperator<SatelliteEnum>, SatelliteMethod>> {
+    tasks.iter().filter(|t| match t {
+        Method(_) => true,
+        Operator(op) => match op {
+            TurnTo(_,dest,start) => dest != start,
+            _ => true
+        }
+    }).map(|t| *t).collect()
+}
+// Replacement
 fn schedule_not_pointing_with_powered_off_instruments(state: &SatelliteState, satellite: &SatelliteEnum, instrument: SatelliteEnum, mode: SatelliteEnum, new_direction: SatelliteEnum, previous_direction: SatelliteEnum, calibration_target_direction: &SatelliteEnum) -> MethodResult<SatelliteOperator<SatelliteEnum>, SatelliteMethod> {
     let powered_on_instrument= find_powered_on_instruments(state, &satellite);
     debug!("Our found powered on instrument is  is {:?}", instrument);
     debug!("Our satellite is {:?}", satellite);
-
     match powered_on_instrument {
         Some(instrument_to_power_off) =>
             {
@@ -128,38 +138,37 @@ fn schedule_not_pointing_with_powered_off_instruments(state: &SatelliteState, sa
                                         Method(Switching(*satellite, instrument)),
                                         Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
                                         Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
-
                 } else if calibration_target_direction == &previous_direction {
-                    TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
-                                        Method(Switching(*satellite, instrument)),
-                                        Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
-                                        Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
-                                        Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+                    TaskLists(vec![remove_redundant_turns(vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                                               Method(Switching(*satellite, instrument)),
+                                                               Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                                               Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
+                                                               Operator(TakeImage(*satellite, new_direction, instrument, mode))])])
                 } else if &new_direction==calibration_target_direction {
-                    TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
-                                        Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
-                                        Method(Switching(*satellite, instrument)),
-                                        Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
-                                        Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+                    TaskLists(vec![remove_redundant_turns(vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                                               Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+                                                               Method(Switching(*satellite, instrument)),
+                                                               Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                                               Operator(TakeImage(*satellite, new_direction, instrument, mode))])])
                 }else{
-                TaskLists(vec![vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
-                                    Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
-                                    Method(Switching(*satellite, instrument)),
-                                    Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
-                                    Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
-                                    Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
-            }
-        },
+                    TaskLists(vec![remove_redundant_turns(vec![Operator(SwitchOff(instrument_to_power_off, *satellite)),
+                                                               Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+                                                               Method(Switching(*satellite, instrument)),
+                                                               Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                                               Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
+                                                               Operator(TakeImage(*satellite, new_direction, instrument, mode))])])
+                }
+            },
         None =>   if &new_direction==calibration_target_direction || new_direction==previous_direction{
             TaskLists(vec![vec![Method(Switching(*satellite, instrument)),
                                 Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
                                 Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
         }else{
-            TaskLists(vec![vec![Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
-                                Method(Switching(*satellite, instrument)),
-                                Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
-                                Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
-                                Operator(TakeImage(*satellite, new_direction, instrument, mode))]])
+            TaskLists(vec![remove_redundant_turns(vec![Operator(TurnTo(*satellite, *calibration_target_direction, previous_direction)),
+                                                       Method(Switching(*satellite, instrument)),
+                                                       Operator(Calibrate(*satellite, instrument, *calibration_target_direction)),
+                                                       Operator(TurnTo(*satellite, new_direction, *calibration_target_direction)),
+                                                       Operator(TakeImage(*satellite, new_direction, instrument, mode))])])
         },
     }
 }
