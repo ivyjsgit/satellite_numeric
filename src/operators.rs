@@ -5,7 +5,6 @@ use strum_macros::*;
 use fixed::types::I40F24;
 use log::{debug, error, info, trace, warn};
 
-
 use crate::methods::SatelliteStatus;
 use crate::methods::SatelliteStatus::{Done, NotDone};
 
@@ -246,17 +245,31 @@ impl SatelliteGoals {
 }
 
 impl SatelliteGoals {
+    
+    pub fn all_met_in(&self, state:&SatelliteState) -> bool{
+        for (location,instrument) in self.have_image.iter(){
+            let state_instrument = state.have_image.get(location);
 
-    pub fn all_met_in(&self, state: &SatelliteState) -> bool {
-        for location in self.have_image.keys() {
-            let goal_instrument = self.have_image.get(location).unwrap();
-            match state.have_image.get(location) {
-                Some(instrument) => if instrument != goal_instrument { return false; },
-                None => return false //If the location isn't found.
+            if state_instrument == None || state_instrument != Some(instrument) {
+                warn!("We have failed the have_image checker!");
+                warn!("Goal have_image: {:?}", self.have_image);
+                warn!("Actual have_image: {:?}", state.have_image);
+                return false;
             }
         }
 
-        return true; //If we have gotten through the entire list, return true
+        for (satellite, direction) in self.pointing.iter(){
+            let state_direction = state.pointing.get(satellite);
+
+            if state_direction == None || state_direction != Some(direction){
+                warn!("We have failed the pointing checker!");
+                warn!("Goal pointing: {:?}", self.pointing);
+                warn!("Actual pointing: {:?}", state.pointing);
+                return false;
+            }
+        }
+        debug!("This plan has been accepted by the checker!");
+        return true;
     }
 }
 

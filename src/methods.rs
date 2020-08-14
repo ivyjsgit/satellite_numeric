@@ -335,29 +335,7 @@ impl Goal for SatelliteGoals {
         vec![Task::Method(SatelliteMethod::ScheduleAll)]
     }
     fn accepts(&self, state: &Self::S) -> bool {
-        for (location,instrument) in self.have_image.iter(){
-            let state_instrument = state.have_image.get(location);
-
-            if state_instrument == None || state_instrument != Some(instrument) {
-                warn!("We have failed the have_image checker!");
-                warn!("Goal have_image: {:?}", self.have_image);
-                warn!("Actual have_image: {:?}", state.have_image);
-                return false;
-            }
-        }
-
-        for (satellite, direction) in self.pointing.iter(){
-            let state_direction = state.pointing.get(satellite);
-
-            if state_direction == None || state_direction != Some(direction){
-                warn!("We have failed the pointing checker!");
-                warn!("Goal pointing: {:?}", self.pointing);
-                warn!("Actual pointing: {:?}", state.pointing);
-                return false;
-            }
-        }
-        debug!("This plan has been accepted by the checker!");
-        return true;
+        return self.all_met_in(state);
     }
 
     fn distance_from(&self, state: &Self::S) -> Self::C {
