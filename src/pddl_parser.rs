@@ -48,7 +48,6 @@ fn extract_state(parsed: &PddlProblem, objects: &BTreeMap<String,I40F24>) -> Sat
     //These things begin with an equal.
     let mut data_capacity : BTreeMap<SatelliteEnum, I40F24> = BTreeMap::new();
     let mut satellite_data_stored: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24> = BTreeMap::new();
-    let mut satellite_fuel_capacity: BTreeMap<SatelliteEnum, I40F24> = BTreeMap::new();
     let mut slew_time: BTreeMap<(SatelliteEnum, SatelliteEnum), I40F24> = BTreeMap::new();
     let mut fuel_used = 0;
     let mut fuel: BTreeMap<SatelliteEnum, I40F24>=  BTreeMap::new();

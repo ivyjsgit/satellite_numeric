@@ -282,18 +282,6 @@ fn pointing_needed(state: &SatelliteState, goal: &SatelliteGoals) -> Vec<(Satell
         .filter(|(sat, dir)| dir != state.pointing.get(&sat).unwrap())
         .collect()
 }
-//This function makes sure that the state's pointing matches the goal's pointing.
-fn does_pass_pointing_check (state: &SatelliteState, goal: &SatelliteGoals) -> bool{
-    for satellite in goal.pointing.keys(){
-        let gotten_direction = state.pointing.get(satellite);
-        if gotten_direction == None{
-            return false; //If the direction is missing from the state, then there can't possibly be a match.
-        }else if gotten_direction != goal.pointing.get(satellite){
-            return false; //If there is no match, then there is no match.
-        }
-    }
-    return true;
-}
 
 //This method returns a Maybe<Instrument> from a state, and a mode.
 fn brute_force_instrument(state: &SatelliteState, mode: &SatelliteEnum)  -> Option<SatelliteEnum> {

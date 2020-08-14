@@ -90,7 +90,7 @@ impl SatelliteState {
                 Some(x) => *x,
                 None => panic!(format!("Error while turning: The following key lookup failed in the slew_time table: {} {}", &key.0, &key.1))
             };
-            self.turn_to_helper(satellite, (slew_time), new_direction, previous_direction);
+            self.turn_to_helper(satellite, slew_time, new_direction, previous_direction);
             return true;
         }else {
             info!("Turn_to failed!");
@@ -274,7 +274,7 @@ impl Operator for SatelliteOperator<SatelliteEnum> {
     type C = I40F24;
     type G = SatelliteGoals;
 
-    fn cost(&self, state: &Self::S, goal: &Self::G) -> Self::C {
+    fn cost(&self, _state: &Self::S, _goal: &Self::G) -> Self::C {
         return I40F24::from_num(1);
     }
 
